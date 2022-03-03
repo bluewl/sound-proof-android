@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -15,22 +14,23 @@ import com.example.sound_proof_android.databinding.FragmentGalleryBinding;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.*;
 import android.content.Context;
+
 import java.util.UUID;
 import android.provider.Settings;
 
 
 public class GalleryFragment extends Fragment {
-    //static Context c;
-    //public static String androidId = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ANDROID_ID);
-    // doesn't change on uninstall or reinstall, will change on a factory reset
-    // can be changed on a rooted phone
+
+    // Android UID doesn't change on uninstall or reinstall, will change on a factory reset. Can be changed on a rooted phone
 
     private FragmentGalleryBinding binding;
     public static String uniqueID = null; // NOTE: the unique ID will reset if the user uninstalls the application.
 
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         uniqueID = getAndroidUniqueDeviceID();
+
 
         GalleryViewModel galleryViewModel =
                 new ViewModelProvider(this).get(GalleryViewModel.class);
@@ -38,10 +38,9 @@ public class GalleryFragment extends Fragment {
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textGallery;
-        galleryViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
         return root;
     }
+
 
     // Uses the Android Unique Device ID
     public String getAndroidUniqueDeviceID(){
