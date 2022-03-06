@@ -1,12 +1,24 @@
 package com.example.sound_proof_android;
 
+import android.Manifest;
+import android.content.ContextWrapper;
+import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -16,10 +28,23 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.sound_proof_android.databinding.ActivityMainBinding;
 
+import java.io.File;
+import java.io.IOException;
+
+import java.util.Date;
+import 	java.util.GregorianCalendar;
+import java.util.TimeZone;
+
+
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityMainBinding binding;
+
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200; // Request code to record audio / access mic
+    private static final String LOG_TAG = "AudioRecord"; // Used to log exceptions
+    private MediaRecorder recorder = null; // Used to record the sound audio
+    private MediaPlayer player = null; // Used to playback the recorded audio for testing purposes
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        getMicrophoneAccess(); // requests microphone access from the user
 
         setSupportActionBar(binding.appBarMain.toolbar);
         binding.appBarMain.fab.setOnClickListener(new View.OnClickListener() {
@@ -48,6 +75,110 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
     }
+
+    // Begins recording from the user's microphone and automatically stops recording after 3 seconds.
+    // The start time of the recording is also captured as a UNIX timestamps in milliseconds and also in
+    // the regular default format.
+    // The recording is also stored in external storage as an .mp3 which we can then synchronize with the actual audio
+    // and use to analyze.
+    public void startRecording(View v) {
+        try{
+            recorder = new MediaRecorder();
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            recorder.setOutputFile(getSoundRecordingPath()); // getAudioFilePath() // "/Users/eric/Desktop/Audio Sources test" // local path for storing recording
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            recorder.prepare();
+            recorder.start();
+
+            // Used to store the start time of the recording as a UNIX timestamp in milliseconds
+            Long tsLong = System.currentTimeMillis();
+            String ts = tsLong.toString();
+
+            // The start time (in a default date format) which is displayed on screen
+            GregorianCalendar gc = new GregorianCalendar();
+            TimeZone utc = TimeZone.getTimeZone("UTC");
+            gc.setTimeZone(utc);
+            Date time = gc.getTime();
+            TextView recordStartTime = findViewById(R.id.startRecordingTime);
+
+            // Display the UNIX timestamp and default format start time on screen
+            String temp = "Started Recording (Unix timestamp in ms): " + ts + "\n" + time;
+            recordStartTime.setText(temp);
+
+            Toast.makeText(this, "Recording has started", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "startRecording() failed");
+        }
+
+        // Waits exactly 3 seconds and then ends the audio recording
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+               stopRecording(v);
+            }
+        }, 3000);
+    }
+
+    // Used to stop the audio recording and also captures the end time's UNIX timestamp
+    public void stopRecording(View v) {
+        recorder.stop();
+        recorder.release();
+        // Used to store the end time of the recording as a UNIX timestamp in milliseconds
+        Long tsLong = System.currentTimeMillis();
+        String ts = tsLong.toString();
+        recorder = null;
+
+        // The end time (in a default date format) which is displayed on screen
+        GregorianCalendar gc = new GregorianCalendar();
+        TimeZone utc = TimeZone.getTimeZone("UTC");
+        gc.setTimeZone(utc);
+        Date time = gc.getTime();
+
+        // Display the UNIX timestamp and default format end time on screen
+        TextView recordStartTime = findViewById(R.id.startRecordingTime);
+        String temp = String.valueOf(recordStartTime.getText());
+        temp += "\n\nStopped Recording (Unix timestamp in ms): " + ts + "\n" + time;
+        recordStartTime.setText(temp);
+
+        Toast.makeText(this, "Recording has stopped", Toast.LENGTH_LONG).show();
+    }
+
+
+    // Plays back the recording for testing purposes
+    public void playRecording(View v) {
+        try {
+            player = new MediaPlayer();
+            player.setDataSource(getSoundRecordingPath());
+            player.prepare();
+            player.start();
+            Toast.makeText(this, "Playback Audio... Duration:" + String.valueOf(player.getDuration()), Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "playRecording() failed");
+            Toast.makeText(this, "Playback has failed", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // Requests permission to access the device's microphone
+    // if the user has not already granted access.
+    private void getMicrophoneAccess(){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+        }
+    }
+
+    // Used to get the file path where the sound recording will be stored in the device's external storage
+    // and returns it as a string for the media recorder and media player to read.
+    private String getSoundRecordingPath(){
+        ContextWrapper contextWrapper = new ContextWrapper(getApplicationContext());
+        File audioDirectory = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_MUSIC);
+        File file = new File(audioDirectory, "soundproof.mp3");
+        return file.getPath();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
