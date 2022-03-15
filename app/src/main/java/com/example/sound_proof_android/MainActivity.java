@@ -8,6 +8,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -31,6 +32,7 @@ import com.example.sound_proof_android.databinding.ActivityMainBinding;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.Calendar;
 import java.util.Date;
 import 	java.util.GregorianCalendar;
 import java.util.TimeZone;
@@ -45,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = "AudioRecord"; // Used to log exceptions
     private MediaRecorder recorder = null; // Used to record the sound audio
     private MediaPlayer player = null; // Used to playback the recorded audio for testing purposes
+
+    public static String ntpDate = "nothing";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,22 +95,25 @@ public class MainActivity extends AppCompatActivity {
             recorder.prepare();
             recorder.start();
 
-            // Used to store the start time of the recording as a UNIX timestamp in milliseconds
-            Long tsLong = System.currentTimeMillis();
-            String ts = tsLong.toString();
+            // Used to get NTP time and compare to local time to find offset
+            // Displays offset, local device's time and the NTP's time when the recording started
+            TimeZone deviceTimeZone = Calendar.getInstance().getTimeZone();
+            SNTPClient.getDate(deviceTimeZone, new SNTPClient.Listener() {
+                @Override
+                public void onTimeResponse(String rawDate, Date date, Exception ex) {
+                    //MainActivity.ntpDate = "NTP date: " + rawDate;
+                    TextView offset = findViewById(R.id.offsetText);
+                    offset.setText("Offset: " + SNTPClient.localTimeNtpTimeOffset);
 
-            // The start time (in a default date format) which is displayed on screen
-            GregorianCalendar gc = new GregorianCalendar();
-            TimeZone utc = TimeZone.getTimeZone("UTC");
-            gc.setTimeZone(utc);
-            Date time = gc.getTime();
-            TextView recordStartTime = findViewById(R.id.startRecordingTime);
+                    TextView localStartTime = findViewById(R.id.localStartTimeText);
+                    localStartTime.setText("Local Start Time: " + SNTPClient.localStartTime);
 
-            // Display the UNIX timestamp and default format start time on screen
-            String temp = "Started Recording (Unix timestamp in ms): " + ts + "\n" + time;
-            recordStartTime.setText(temp);
+                    TextView ntpStartTime = findViewById(R.id.ntpStartTimeText);
+                    ntpStartTime.setText("NTP Start Time: " + SNTPClient.NtpStartTime);
+                }
+            });
 
-            Toast.makeText(this, "Recording has started", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Recording Has Started", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Log.e(LOG_TAG, "startRecording() failed");
         }
@@ -125,24 +132,19 @@ public class MainActivity extends AppCompatActivity {
     public void stopRecording(View v) {
         recorder.stop();
         recorder.release();
-        // Used to store the end time of the recording as a UNIX timestamp in milliseconds
-        Long tsLong = System.currentTimeMillis();
-        String ts = tsLong.toString();
+        // Used to store the end time of the recording as a UNIX timestamp in milliseconds (local device time)
+        Long localStopTimestamp = System.currentTimeMillis();
         recorder = null;
 
-        // The end time (in a default date format) which is displayed on screen
-        GregorianCalendar gc = new GregorianCalendar();
-        TimeZone utc = TimeZone.getTimeZone("UTC");
-        gc.setTimeZone(utc);
-        Date time = gc.getTime();
+        // Displays the local device's time and NTP server's time once the recording ends.
+        TextView localStopTime = findViewById(R.id.localStopTimeText);
+        localStopTime.setText("Local Stop Time: " + localStopTimestamp);
 
-        // Display the UNIX timestamp and default format end time on screen
-        TextView recordStartTime = findViewById(R.id.startRecordingTime);
-        String temp = String.valueOf(recordStartTime.getText());
-        temp += "\n\nStopped Recording (Unix timestamp in ms): " + ts + "\n" + time;
-        recordStartTime.setText(temp);
+        Long ntpStopTimestamp = SNTPClient.NtpStartTime + SNTPClient.localTimeNtpTimeOffset;
+        TextView ntpStopTime = findViewById(R.id.ntpStopTimeText);
+        ntpStopTime.setText("NTP Stop Time: " + ntpStopTimestamp);
 
-        Toast.makeText(this, "Recording has stopped", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Recording Has Stopped.", Toast.LENGTH_LONG).show();
     }
 
 
