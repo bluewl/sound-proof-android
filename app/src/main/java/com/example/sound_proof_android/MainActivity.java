@@ -140,7 +140,8 @@ public class MainActivity extends AppCompatActivity {
         TextView localStopTime = findViewById(R.id.localStopTimeText);
         localStopTime.setText("Local Stop Time: " + localStopTimestamp);
 
-        Long ntpStopTimestamp = SNTPClient.NtpStartTime + SNTPClient.localTimeNtpTimeOffset;
+        // given the audio recording is 3000ms in duration, the NTP stop time will be 3000ms after the NTP start time
+        Long ntpStopTimestamp = SNTPClient.NtpStartTime + 3000;
         TextView ntpStopTime = findViewById(R.id.ntpStopTimeText);
         ntpStopTime.setText("NTP Stop Time: " + ntpStopTimestamp);
 
