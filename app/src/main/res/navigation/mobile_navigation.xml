@@ -13,9 +13,9 @@
 
     <fragment
         android:id="@+id/nav_gallery"
-        android:name="com.example.sound_proof_android.ui.gallery.GalleryFragment"
+        android:name="com.example.sound_proof_android.ui.Record.RecordFragment"
         android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        tools:layout="@layout/fragment_record" />
 
     <fragment
         android:id="@+id/nav_connect"

@@ -1,4 +1,4 @@
-package com.example.sound_proof_android.ui.gallery;
+package com.example.sound_proof_android.ui.Record;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.sound_proof_android.databinding.FragmentGalleryBinding;
+import com.example.sound_proof_android.databinding.FragmentRecordBinding;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.*;
@@ -19,11 +19,11 @@ import java.util.UUID;
 import android.provider.Settings;
 
 
-public class GalleryFragment extends Fragment {
+public class RecordFragment extends Fragment {
 
     // Android UID doesn't change on uninstall or reinstall, will change on a factory reset. Can be changed on a rooted phone
 
-    private FragmentGalleryBinding binding;
+    private FragmentRecordBinding binding;
     public static String uniqueID = null; // NOTE: the unique ID will reset if the user uninstalls the application.
 
 
@@ -32,10 +32,10 @@ public class GalleryFragment extends Fragment {
         uniqueID = getAndroidUniqueDeviceID();
 
 
-        GalleryViewModel galleryViewModel =
-                new ViewModelProvider(this).get(GalleryViewModel.class);
+        RecordViewModel recordViewModel =
+                new ViewModelProvider(this).get(RecordViewModel.class);
 
-        binding = FragmentGalleryBinding.inflate(inflater, container, false);
+        binding = FragmentRecordBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
         return root;
