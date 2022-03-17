@@ -1,10 +1,13 @@
 package com.example.sound_proof_android.ui.connect;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -18,7 +21,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
+import com.example.sound_proof_android.ui.gallery.GalleryFragment;
+import com.example.sound_proof_android.ui.home.HomeFragment;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -43,7 +49,7 @@ public class ConnectFragment extends Fragment {
     private ConnectViewModel mViewModel;
     private EditText browserText;
     private Button submitButton;
-    private Button remakeKeyButton;
+    private Button qrButton;
     private TextView pubKeyText;
     // RSA variables
     private static final String TAG = "RSACryptor";
@@ -65,6 +71,7 @@ public class ConnectFragment extends Fragment {
 
         browserText = v.findViewById(R.id.browserText);
         submitButton = v.findViewById(R.id.submitButton);
+        qrButton = v.findViewById(R.id.qrButton);
         pubKeyText = v.findViewById(R.id.pubKeyText);
 
         try {
@@ -84,6 +91,14 @@ public class ConnectFragment extends Fragment {
             public void onClick(View view) {
                 // Implement POST REQUEST here
 
+            }
+        });
+
+        qrButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), QRCodeActivity.class);
+                startActivity(intent);
             }
         });
         return v;

@@ -18,8 +18,15 @@
         tools:layout="@layout/fragment_gallery" />
 
     <fragment
-        android:id="@+id/nav_slideshow"
+        android:id="@+id/nav_connect"
         android:name="com.example.sound_proof_android.ui.connect.ConnectFragment"
         android:label="@string/menu_connect"
-        tools:layout="@layout/fragment_slideshow" />
+        tools:layout="@layout/fragment_connect" />
+
+    <fragment
+        android:id="@+id/nav_processing"
+        android:name="com.example.sound_proof_android.ui.processing.ProcessingFragment"
+        android:label="@string/menu_processing"
+        tools:layout="@layout/fragment_processing" />
+
 </navigation>

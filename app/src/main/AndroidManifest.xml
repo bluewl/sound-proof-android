@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.sound_proof_android">
+
+    <meta-data
+        android:name="com.google.android.gms.vision.DEPENDENCIES"
+        android:value="barcode" />
+
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
@@ -10,6 +16,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Soundproofandroid">
+        <activity
+            android:name=".QRCodeActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -22,4 +31,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>

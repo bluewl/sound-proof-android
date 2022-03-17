@@ -3,6 +3,7 @@ package com.example.sound_proof_android;
 import android.Manifest;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
+import android.media.AudioFormat;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        getCameraAccess();
         getMicrophoneAccess(); // requests microphone access from the user
 
         setSupportActionBar(binding.appBarMain.toolbar);
@@ -68,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
+                R.id.nav_home, R.id.nav_gallery, R.id.nav_processing)
                 .setOpenableLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
@@ -87,7 +89,6 @@ public class MainActivity extends AppCompatActivity {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             recorder.setOutputFile(getSoundRecordingPath()); // getAudioFilePath() // "/Users/eric/Desktop/Audio Sources test" // local path for storing recording
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
             recorder.prepare();
             recorder.start();
 
@@ -157,6 +158,14 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.e(LOG_TAG, "playRecording() failed");
             Toast.makeText(this, "Playback has failed", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void getCameraAccess() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA}, REQUEST_RECORD_AUDIO_PERMISSION);
         }
     }
 
