@@ -11,7 +11,6 @@ public class RecordViewModel extends ViewModel {
 
     public RecordViewModel() {
         mText = new MutableLiveData<>();
-        mText.setValue("Android Unique Device ID: \n" + RecordFragment.uniqueID);
     }
 
 

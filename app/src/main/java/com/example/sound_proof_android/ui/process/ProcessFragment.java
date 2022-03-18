@@ -1,4 +1,4 @@
-package com.example.sound_proof_android.ui.processing;
+package com.example.sound_proof_android.ui.process;
 
 import android.content.ContextWrapper;
 import android.os.Bundle;
@@ -7,14 +7,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.example.sound_proof_android.R;
-import com.example.sound_proof_android.databinding.FragmentHomeBinding;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +24,7 @@ import java.util.ArrayList;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
-public class ProcessingFragment extends Fragment {
+public class ProcessFragment extends Fragment {
 
     private Button processButton;
     int type [] = {0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1};
@@ -39,7 +36,7 @@ public class ProcessingFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        View v = inflater.inflate(R.layout.fragment_processing, container, false);
+        View v = inflater.inflate(R.layout.fragment_process, container, false);
 
         processButton = v.findViewById(R.id.processButton);
 
