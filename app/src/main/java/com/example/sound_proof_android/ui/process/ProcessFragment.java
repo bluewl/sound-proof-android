@@ -102,9 +102,7 @@ public class ProcessFragment extends Fragment {
                     // System.out.println("Total data bytes "+sum);
                     // return data;
                     System.out.println("**********************************************************");
-                    for (int i = 0; i< data.length; i++) {
-                        System.out.print(data[i]);
-                    }
+                    System.out.print(data.length);
                     System.out.println();
                     System.out.println("**********************************************************");
                 } catch (FileNotFoundException e) {

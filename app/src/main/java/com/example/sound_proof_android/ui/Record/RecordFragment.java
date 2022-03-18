@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -23,6 +25,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
 import com.example.sound_proof_android.SNTPClient;
+import com.example.sound_proof_android.WavRecorder;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.*;
@@ -34,6 +37,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
+
 import android.provider.Settings;
 import android.widget.Button;
 import android.widget.TextView;
@@ -54,12 +58,18 @@ public class RecordFragment extends Fragment {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200; // Request code to record audio / access mic
     private static final String LOG_TAG = "AudioRecord"; // Used to log exceptions
-    private MediaRecorder recorder = null; // Used to record the sound audio
+    private AudioRecord recorder = null; // Used to record the sound audio
     private MediaPlayer player = null; // Used to playback the recorded audio for testing purposes
 
     private TimeZone deviceTimeZone;
     public static String ntpDate = "nothing";
-
+    private static final int SAMPLING_RATE_IN_HZ = 44100;
+    private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
+    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int BUFFER_SIZE_FACTOR = 2;
+    private static final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLING_RATE_IN_HZ,
+            CHANNEL_CONFIG, AUDIO_FORMAT) * BUFFER_SIZE_FACTOR;
+    WavRecorder wavRecorder;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -100,14 +110,13 @@ public class RecordFragment extends Fragment {
     // The recording is also stored in external storage as an .mp3 which we can then synchronize with the actual audio
     // and use to analyze.
     public void startRecording() {
-        try{
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            recorder.setOutputFile(getSoundRecordingPath()); // getAudioFilePath() // "/Users/eric/Desktop/Audio Sources test" // local path for storing recording
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            recorder.prepare();
-            recorder.start();
+        try {
+            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+            }
+            wavRecorder = new WavRecorder(getSoundRecordingPath());
+            wavRecorder.startRecording();
 
             // Used to get NTP time and compare to local time to find offset
             // Displays offset, local device's time and the NTP's time when the recording started
@@ -124,24 +133,18 @@ public class RecordFragment extends Fragment {
             });
 
             Toast.makeText(getActivity(), "Recording Has Started", Toast.LENGTH_LONG).show();
+
+            // Waits exactly 3 seconds and then ends the audio recording
+            Thread.sleep(3000);
+            stopRecording();
         } catch (Exception e) {
             Log.e(LOG_TAG, "startRecording() failed");
         }
-
-        // Waits exactly 3 seconds and then ends the audio recording
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                stopRecording();
-            }
-        }, 3000);
     }
 
     // Used to stop the audio recording and also captures the end time's UNIX timestamp
     public void stopRecording() {
-        recorder.stop();
-        recorder.release();
+        wavRecorder.stopRecording();
         // Used to store the end time of the recording as a UNIX timestamp in milliseconds (local device time)
         Long localStopTimestamp = System.currentTimeMillis();
         recorder = null;
@@ -160,7 +163,7 @@ public class RecordFragment extends Fragment {
     public void playRecording() {
         try {
             player = new MediaPlayer();
-            player.setDataSource(getSoundRecordingPath());
+            player.setDataSource(getSoundRecordingPath()+"/soundproof.wav");
             player.prepare();
             player.start();
             Toast.makeText(getActivity(), "Playback Audio... Duration:" + String.valueOf(player.getDuration()), Toast.LENGTH_LONG).show();
@@ -175,7 +178,6 @@ public class RecordFragment extends Fragment {
     private String getSoundRecordingPath(){
         ContextWrapper contextWrapper = new ContextWrapper(getActivity().getApplicationContext());
         File audioDirectory = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_MUSIC);
-        File file = new File(audioDirectory, "soundproof.mp3");
-        return file.getPath();
+        return audioDirectory.getPath();
     }
 }
