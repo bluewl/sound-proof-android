@@ -23,6 +23,7 @@ import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -81,6 +82,12 @@ public class ConnectFragment extends Fragment {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
+
+        // TEST CODE TO CHECK IF BROWSER ENCRYPT WORKED BY DECRYPTING THE ENCRYPTED MESSAGE
+        String text = "WC3XzgJLUZtK7midvfs9RPsVzjr1PAyBTOTWCKccZxBJ3juWeqohO0Mup1eXProAw7UdJW24bHprnnWuubvgjFH/VoKgzquBT9FWFExBXJjYHqWFIfAwC+mlD/PD0cr1pP2qDaud1V3siGMJ4QwdMbWw6sFvVfHlCGs5ttyVLlH5SLGd0OtDNMQgIdxhqDRVCZd//k3OXwVzJmbupsuAIUkj2V07L1XfwTXvIndfc61Kw3m1j3n1+HfVvr9seIRq1MeX3wEKJOiXNuaD0Rm62pXSpM/Z0wEffR0INRBWIO3jSBGr3FgCRKLte18D9qn2vnQo0E/sW6vsgT1t0XyTtA==";
+        byte[] decryptBytes = Base64.decode(text, Base64.DEFAULT);
+        Log.d(TAG,"DECRYPT "+ decrypt(decryptBytes));
+        // USE ABOVE CODE TO DECRYPT
 
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -149,8 +156,8 @@ public class ConnectFragment extends Fragment {
             return new String(decryptedText);
         }catch (UnrecoverableKeyException | IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e){
             Log.e("decrypt catch", e.getMessage()+"");
-            String text = new String(encryptedText);
-            return text;
+            e.printStackTrace();
+            return null;
         }
 
     }
