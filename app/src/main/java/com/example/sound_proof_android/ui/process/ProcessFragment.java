@@ -147,4 +147,41 @@ public class ProcessFragment extends Fragment {
         System.out.println(data.length);
         return data;
     }
+
+    // Used to calculate the cross correlation between two signals
+    public float crossCorrelation(float[] x, float[] y, int l, int n){
+        float sumCorrelation = 0; // used to keep track of the sum amount for the correlation
+        // loop through n bands (24) for each signal
+        for (int i = 0; i < 24; i++) {
+            if(i < 0 || i > n-1){ // where y(i) = 0 if i < 0 or i > n − 1.
+                y[i] = 0;
+            }
+            sumCorrelation += x[i] * y[i - l];
+        }
+        return sumCorrelation;
+    }
+
+    // Used to calculate and return lag time in ms
+    public int lagCalc(long browserNtpStartTime, long mobileNtpStartTime){
+        return (int)(mobileNtpStartTime - browserNtpStartTime);
+    }
+
+    // Used to normalize the cross correlation of two signals
+    // returning 1 indicates the two signals have the same shape,
+    // returning -1 indicates the two signals have the same shape but opposite signs,
+    // returning 0 indicates the two signals are uncorrelated
+    public int normalize(float[] x, float[] y, int l){
+        return (int)(crossCorrelation(x, y, l, 24) / Math.sqrt((crossCorrelation(x, x, 0, 24) * crossCorrelation(y, y, 0, 24))) );
+    }
+
+    // Used to compute the similarity score by determining the average
+    // from the max cross-correlation across signals x[i] and y[i].
+    public float similarityScore(float[][] x, float[][] y, int l, int n){
+        float runningSum = 0;
+        for (int i = 0; i < n; i++) {
+            runningSum += crossCorrelation(x[i], y[i], l, 24);
+        }
+        return (1.0f / n) * runningSum;
+    }
+
 }
