@@ -160,10 +160,11 @@ public class ProcessFragment extends Fragment {
     }
 
     // Used to calculate the cross correlation between two signals
-    public double crossCorrelation(double[] x, double[] y, int l, int n){
-        double sumCorrelation = 0; // used to keep track of the sum amount for the correlation
-        // loop through n bands (24) for each signal
-        for (int i = 0; i < 24; i++) {
+
+    public float crossCorrelation(double[] x, double[] y, int l, int n){
+        float sumCorrelation = 0; // used to keep track of the sum amount for the correlation
+        // loop through n bands for each signal
+        for (int i = 0; i < n; i++) {
             if(i < 0 || i > n-1){ // where y(i) = 0 if i < 0 or i > n − 1.
                 y[i] = 0;
             }
@@ -182,7 +183,7 @@ public class ProcessFragment extends Fragment {
     // returning -1 indicates the two signals have the same shape but opposite signs,
     // returning 0 indicates the two signals are uncorrelated
     public int normalize(double[] x, double[] y, int l){
-        return (int)(crossCorrelation(x, y, l, 24) / Math.sqrt((crossCorrelation(x, x, 0, 24) * crossCorrelation(y, y, 0, 24))) );
+        return (int)(crossCorrelation(x, y, l, x.length) / Math.sqrt((crossCorrelation(x, x, 0, x.length) * crossCorrelation(y, y, 0, y.length))) );
     }
 
     // Used to compute the similarity score by determining the average
@@ -190,7 +191,7 @@ public class ProcessFragment extends Fragment {
     public double similarityScore(double[][] x, double[][] y, int l, int n){
         double runningSum = 0;
         for (int i = 0; i < n; i++) {
-            runningSum += crossCorrelation(x[i], y[i], l, 24);;
+            runningSum += normalize(x[i], y[i], l);
         }
         return (1.0f / n) * runningSum;
     }

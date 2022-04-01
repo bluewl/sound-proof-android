@@ -31,8 +31,14 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.*;
 import android.content.Context;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -43,13 +49,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
 
 
 public class RecordFragment extends Fragment {
 
     private Button startRec;
     private Button playRec;
+    private Button syncTime;
     private TextView offset;
     private TextView localStartTime;
     private TextView ntpStartTime;
@@ -80,6 +86,7 @@ public class RecordFragment extends Fragment {
 
         startRec = v.findViewById(R.id.record_button);
         playRec = v.findViewById(R.id.play_recording_button);
+        syncTime = v.findViewById(R.id.sync_time_button);
         offset = v.findViewById(R.id.offsetText);
         localStartTime = v.findViewById(R.id.localStartTimeText);
         ntpStartTime = v.findViewById(R.id.ntpStartTimeText);
@@ -98,6 +105,13 @@ public class RecordFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 playRecording();
+            }
+        });
+
+        syncTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                syncWithServerTime();
             }
         });
 
@@ -179,5 +193,72 @@ public class RecordFragment extends Fragment {
         ContextWrapper contextWrapper = new ContextWrapper(getActivity().getApplicationContext());
         File audioDirectory = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_MUSIC);
         return audioDirectory.getPath();
+    }
+
+    private void syncWithServerTime(){
+        Toast.makeText(getActivity(), "Inside sync function", Toast.LENGTH_LONG).show();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try  {
+                    try {
+                        URL url = new URL("https://soundproof.azurewebsites.net/servertime");
+                        long requestTime = System.currentTimeMillis();
+                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                        InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                        String temp = readStream(in);
+                        long responseTime = System.currentTimeMillis();
+                        Log.d("localServerTag", "Request time: " + requestTime);
+                        Log.d("stopServerSuccessTag", "Stop server time: " + temp);
+                        long latency = (responseTime-requestTime)/2;
+                        Log.d("latencySuccessTag", "Latency: " + latency);
+                        //long stopServerTime = new Long(temp);
+                        //long stopServerTimeLatency = stopServerTime + latency;
+                        Log.d("localServerTag", "Response time: " + responseTime);
+                        Log.d("stopServerTimeSuccessTag", "Stop server time with latency: " + temp + " + " + latency);
+                        urlConnection.disconnect();
+                    } catch (Exception e) {
+                        Log.d("serverExceptionTag", "Server time exception: " + e);
+                        e.printStackTrace();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+
+
+        /*timeRequest.open('GET', "{{ url_for('spAPI.servertime') }}");
+        timeRequest.onreadystatechange = function () {
+            if (timeRequest.readyState != 4) {
+                return;
+            }
+            var responseTime = (new Date).getTime();
+            var rtdLatency = (responseTime - requestTime)/2;
+            var serverTimeAtRequest = parseFloat(timeRequest.response);
+
+            serverTime = serverTimeAtRequest+rtdLatency;
+
+            console.log("client time request made", requestTime.valueOf());
+            console.log("client time recieve response", responseTime.valueOf());
+            console.log("latency", rtdLatency.valueOf());
+            console.log("server's time when request recieved", serverTimeAtRequest);
+            console.log("server time + latency", serverTime);
+
+            recordingTime = serverTime.valueOf();
+        };
+        timeRequest.send(null);*/
+    }
+
+    private String readStream(InputStream is) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader r = new BufferedReader(new InputStreamReader(is),1000);
+        for (String line = r.readLine(); line != null; line =r.readLine()){
+            sb.append(line);
+        }
+        is.close();
+        return sb.toString();
     }
 }
