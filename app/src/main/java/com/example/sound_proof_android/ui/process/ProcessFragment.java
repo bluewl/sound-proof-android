@@ -47,14 +47,25 @@ public class ProcessFragment extends Fragment {
             public void onClick(View view) {
                 try {
                     double[] data = readWav();
-                    System.out.println("Before creating One Third Octave Class ******");
                     OneThirdOctaveBands third = new OneThirdOctaveBands(sampleRate, OneThirdOctaveBands.FREQUENCY_BANDS.REDUCED, getActivity());
-                    System.out.println("After creating One Third Octave Class ******");
+                    // filtered mobile audio signals
+                    // should be [24][signal data length]
                     double[][] filteredSignal = third.thirdOctaveFiltering(data);
-                    System.out.println("*******************************************************");
-                    System.out.println(filteredSignal.length);
-                    System.out.println(filteredSignal[0].length);
-                    System.out.println("*******************************************************");
+
+                    // *** test1: duplicating mobile audio to test cross-correlation
+                    double[][] filteredSignalDup = filteredSignal.clone();
+
+                    // assuming lag is 0ms
+                    // normalize function test
+                    for (int i = 0; i < 24; i++) {
+                        // should print 1 or -1 but not 0
+                        System.out.println("normalization mapping of freq range " + i + " is " + normalize(filteredSignal[i], filteredSignalDup[i], 0));
+                    }
+                    // similarity score test
+                    double simScore = similarityScore(filteredSignal, filteredSignalDup, 0, 24);
+                    System.out.println("Similary Score is " + simScore);
+                    // *** test1 end
+
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
@@ -149,8 +160,8 @@ public class ProcessFragment extends Fragment {
     }
 
     // Used to calculate the cross correlation between two signals
-    public float crossCorrelation(float[] x, float[] y, int l, int n){
-        float sumCorrelation = 0; // used to keep track of the sum amount for the correlation
+    public double crossCorrelation(double[] x, double[] y, int l, int n){
+        double sumCorrelation = 0; // used to keep track of the sum amount for the correlation
         // loop through n bands (24) for each signal
         for (int i = 0; i < 24; i++) {
             if(i < 0 || i > n-1){ // where y(i) = 0 if i < 0 or i > n − 1.
@@ -170,16 +181,16 @@ public class ProcessFragment extends Fragment {
     // returning 1 indicates the two signals have the same shape,
     // returning -1 indicates the two signals have the same shape but opposite signs,
     // returning 0 indicates the two signals are uncorrelated
-    public int normalize(float[] x, float[] y, int l){
+    public int normalize(double[] x, double[] y, int l){
         return (int)(crossCorrelation(x, y, l, 24) / Math.sqrt((crossCorrelation(x, x, 0, 24) * crossCorrelation(y, y, 0, 24))) );
     }
 
     // Used to compute the similarity score by determining the average
     // from the max cross-correlation across signals x[i] and y[i].
-    public float similarityScore(float[][] x, float[][] y, int l, int n){
-        float runningSum = 0;
+    public double similarityScore(double[][] x, double[][] y, int l, int n){
+        double runningSum = 0;
         for (int i = 0; i < n; i++) {
-            runningSum += crossCorrelation(x[i], y[i], l, 24);
+            runningSum += crossCorrelation(x[i], y[i], l, 24);;
         }
         return (1.0f / n) * runningSum;
     }
