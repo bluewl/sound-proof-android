@@ -18,9 +18,24 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -81,6 +96,8 @@ public class ConnectFragment extends Fragment {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            e.printStackTrace();
         }
 
         // TEST CODE TO CHECK IF BROWSER ENCRYPT WORKED BY DECRYPTING THE ENCRYPTED MESSAGE
@@ -92,8 +109,58 @@ public class ConnectFragment extends Fragment {
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Implement POST REQUEST here
+                RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
+                String url = "https://soundproof.azurewebsites.net/tokenenrollment";
 
+                JSONObject postData = new JSONObject();
+                try {
+//                    postData.put("token", browserText.getText().toString());
+                    postData.put("token", "4189d0cc8ed13aa63c78b82938daab7d4481bcf53c0777cd972a538b8c886fa2");
+                    postData.put("key", pubKeyText.getText().toString());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(pubKeyText.getText().toString());
+                String mRequestBody = postData.toString();
+
+                StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.i("LOG_RESPONSE", response);
+                        Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("LOG_RESPONSE", error.toString());
+                    }
+                }) {
+                    @Override
+                    public String getBodyContentType() {
+                        return "application/json; charset=utf-8";
+                    }
+
+                    @Override
+                    public byte[] getBody() throws AuthFailureError {
+                        try {
+                            return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                        } catch (UnsupportedEncodingException uee) {
+                            VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                            return null;
+                        }
+                    }
+
+                    @Override
+                    protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                        String responseString = "";
+                        if (response != null) {
+                            responseString = String.valueOf(response.statusCode);
+                        }
+                        return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                    }
+                };
+
+                requestQueue.add(stringRequest);
             }
         });
 
@@ -129,7 +196,7 @@ public class ConnectFragment extends Fragment {
 
     // displays the public key of the phone
     // if the keystore is empty, both public and private key is created
-    public void displayKey() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    public void displayKey() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
         if (!keyStore.containsAlias("spKey")) {

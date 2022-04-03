@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
         getCameraAccess();
         getMicrophoneAccess(); // requests microphone access from the user
+        getExternalStorageAccess();
 
         setSupportActionBar(binding.appBarMain.toolbar);
         binding.appBarMain.fab.setOnClickListener(new View.OnClickListener() {
@@ -92,6 +93,15 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+        }
+    }
+
+    // To access sdcard
+    private void getExternalStorageAccess(){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 300);
         }
     }
 
