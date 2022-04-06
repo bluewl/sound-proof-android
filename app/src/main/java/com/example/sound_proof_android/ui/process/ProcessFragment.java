@@ -38,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
@@ -192,7 +193,8 @@ public class ProcessFragment extends Fragment {
     // Used to calculate the cross correlation between two signals
     public double crossCorrelation(double[] x, double[] y, int l){
         double sumCorrelation = 0; // used to keep track of the sum amount for the correlation
-        for (int i = l; i < x.length; i++) {
+        int smallerLength = min(x.length, y.length);
+        for (int i = l; i < smallerLength; i++) {
             sumCorrelation += x[i] * y[i - l];
         }
         return sumCorrelation;
@@ -226,12 +228,12 @@ public class ProcessFragment extends Fragment {
         if(l > 150) return 0.0; // reject the audio if there is a lag greater than 150ms
 
         double runningSum = 0;
-        for (int i = 0; i < 24; i++) {
+        for (int i = 0; i < x.length; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
             System.out.println(" ** Max Cross-Correlation for array " + i + " is " + maxCrossCorr);
             runningSum += maxCrossCorr;
         }
-        return (runningSum / 24);
+        return (runningSum / x.length);
     }
 
     // Decrypting audio file with AES encryption
