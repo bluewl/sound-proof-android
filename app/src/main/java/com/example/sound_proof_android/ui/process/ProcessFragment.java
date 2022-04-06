@@ -86,10 +86,15 @@ public class ProcessFragment extends Fragment {
                     double[][] filteredSignalDup = third.thirdOctaveFiltering(browserAudioData);
 
                     // similarity score test
-                    //for (int i = 80; i < 120; i++) {
-                        double simScore = similarityScore(filteredSignal, filteredSignalDup, lag);
-                        System.out.println("Similary Score is " + simScore);
-                    //}
+                    double simThreshold = 0.13;
+                    double simScore = similarityScore(filteredSignal, filteredSignalDup, lag);
+                    System.out.println("Similary Score is " + simScore);
+
+                    if(simScore > simThreshold){
+                        System.out.println("Login Accepted - Sounds are the same.");
+                    } else {
+                        System.out.println("Login Rejected - Sounds are the same.");
+                    }
                    // double simScore = similarityScore(filteredSignal, filteredSignalDup, lag, 24);
                    // System.out.println("Similary Score is " + simScore);
                     // *** test1 end
@@ -218,6 +223,8 @@ public class ProcessFragment extends Fragment {
     // Used to compute the similarity score by determining the average
     // from the max cross-correlation across signals x[i] and y[i].
     public double similarityScore(double[][] x, double[][] y, int l){
+        if(l > 150) return 0.0; // reject the audio if there is a lag greater than 150ms
+
         double runningSum = 0;
         for (int i = 0; i < x.length; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
