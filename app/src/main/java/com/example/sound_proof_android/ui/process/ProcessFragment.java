@@ -219,12 +219,12 @@ public class ProcessFragment extends Fragment {
     // from the max cross-correlation across signals x[i] and y[i].
     public double similarityScore(double[][] x, double[][] y, int l){
         double runningSum = 0;
-        for (int i = 0; i < x.length; i++) {
+        for (int i = 0; i < 24; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
             System.out.println(" ** Max Cross-Correlation for array " + i + " is " + maxCrossCorr);
             runningSum += maxCrossCorr;
         }
-        return (runningSum / x.length);
+        return (runningSum / 24);
     }
 
     // Decrypting audio file with AES encryption
