@@ -86,8 +86,12 @@ public class ProcessFragment extends Fragment {
                     double[][] filteredSignalDup = third.thirdOctaveFiltering(browserAudioData);
 
                     // similarity score test
-                    double simScore = similarityScore(filteredSignal, filteredSignalDup, lag, 24);
-                    System.out.println("Similary Score is " + simScore);
+                    //for (int i = 80; i < 120; i++) {
+                        double simScore = similarityScore(filteredSignal, filteredSignalDup, lag);
+                        System.out.println("Similary Score is " + simScore);
+                    //}
+                   // double simScore = similarityScore(filteredSignal, filteredSignalDup, lag, 24);
+                   // System.out.println("Similary Score is " + simScore);
                     // *** test1 end
 
                 } catch (FileNotFoundException e) {
@@ -179,6 +183,7 @@ public class ProcessFragment extends Fragment {
         return data;
     }
 
+    // lag = 80ms - 100m
     // Used to calculate the cross correlation between two signals
     public double crossCorrelation(double[] x, double[] y, int l){
         double sumCorrelation = 0; // used to keep track of the sum amount for the correlation
@@ -197,12 +202,12 @@ public class ProcessFragment extends Fragment {
     // returning 1 indicates the two signals have the same shape,
     // returning -1 indicates the two signals have the same shape but opposite signs,
     // returning 0 indicates the two signals are uncorrelated
-    public int normalize(double[] x, double[] y, int l){
-        return (int)(crossCorrelation(x, y, l) / Math.sqrt((crossCorrelation(x, x, 0) * crossCorrelation(y, y, 0))) );
+    public float normalize(double[] x, double[] y, int l){
+        return (float)(crossCorrelation(x, y, l) / Math.sqrt((crossCorrelation(x, x, 0) * crossCorrelation(y, y, 0))) );
     }
 
-    public int maxCrossCorrelation(double[] x, double[] y, int l) {
-        int max = normalize(x,y,0);
+    public float maxCrossCorrelation(double[] x, double[] y, int l) {
+        float max = normalize(x,y,0);
         for (int i = 1; i < 150; i++) {
             System.out.println("MAX " + max);
             max = max(normalize(x,y,i), max);
@@ -212,14 +217,14 @@ public class ProcessFragment extends Fragment {
 
     // Used to compute the similarity score by determining the average
     // from the max cross-correlation across signals x[i] and y[i].
-    public double similarityScore(double[][] x, double[][] y, int l, int n){
+    public double similarityScore(double[][] x, double[][] y, int l){
         double runningSum = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < x.length; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
             System.out.println(" ** Max Cross-Correlation for array " + i + " is " + maxCrossCorr);
             runningSum += maxCrossCorr;
         }
-        return (runningSum / n);
+        return (runningSum / x.length);
     }
 
     // Decrypting audio file with AES encryption
