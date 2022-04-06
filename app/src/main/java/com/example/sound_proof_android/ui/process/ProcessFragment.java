@@ -226,12 +226,12 @@ public class ProcessFragment extends Fragment {
         if(l > 150) return 0.0; // reject the audio if there is a lag greater than 150ms
 
         double runningSum = 0;
-        for (int i = 0; i < x.length; i++) {
+        for (int i = 0; i < 24; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
             System.out.println(" ** Max Cross-Correlation for array " + i + " is " + maxCrossCorr);
             runningSum += maxCrossCorr;
         }
-        return (runningSum / x.length);
+        return (runningSum / 24);
     }
 
     // Decrypting audio file with AES encryption
