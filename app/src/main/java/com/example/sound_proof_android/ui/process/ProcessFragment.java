@@ -76,7 +76,7 @@ public class ProcessFragment extends Fragment {
 
                     // TEST: reading two wav file from res/raw (local) folder to compare
                     // note: sptest1 has around 80ms of lag from mobile audio to browser audio
-                    double[] mobileAudioData = readWav(getResources().openRawResource(R.raw.sptest1_mobile_0ms));
+                    double[] mobileAudioData = readWav(getResources().openRawResource(R.raw.random));
                     double[] browserAudioData = readWav(getResources().openRawResource(R.raw.sptest1_browser_plus80ms));
                     int lag = 80;
 
@@ -92,9 +92,9 @@ public class ProcessFragment extends Fragment {
                     System.out.println("Similary Score is " + simScore);
 
                     if(simScore > simThreshold){
-                        System.out.println("Login Accepted - Sounds are the same.");
+                        System.out.println("Login Accepted - Similarity score passed.");
                     } else {
-                        System.out.println("Login Rejected - Sounds are the same.");
+                        System.out.println("Login Rejected - Similarity score failed.");
                     }
                    // double simScore = similarityScore(filteredSignal, filteredSignalDup, lag, 24);
                    // System.out.println("Similary Score is " + simScore);
@@ -216,7 +216,6 @@ public class ProcessFragment extends Fragment {
     public float maxCrossCorrelation(double[] x, double[] y, int l) {
         float max = normalize(x,y,0);
         for (int i = 1; i < 150; i++) {
-            System.out.println("MAX " + max);
             max = max(normalize(x,y,i), max);
         }
         return max;
@@ -230,7 +229,7 @@ public class ProcessFragment extends Fragment {
         double runningSum = 0;
         for (int i = 0; i < x.length; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
-            System.out.println(" ** Max Cross-Correlation for array " + i + " is " + maxCrossCorr);
+            System.out.println(" ** Max Cross-Correlation for array " + (i + 1) + " is " + maxCrossCorr);
             runningSum += maxCrossCorr;
         }
         return (runningSum / x.length);
