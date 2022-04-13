@@ -76,8 +76,8 @@ public class ProcessFragment extends Fragment {
 
                     // TEST: reading two wav file from res/raw (local) folder to compare
                     // note: sptest1 has around 80ms of lag from mobile audio to browser audio
-                    double[] mobileAudioData = readWav(getResources().openRawResource(R.raw.random));
-                    double[] browserAudioData = readWav(getResources().openRawResource(R.raw.sptest1_browser_plus80ms));
+                    double[] mobileAudioData = readWav(getResources().openRawResource(R.raw.sptest3_browser_200ms));
+                    double[] browserAudioData = readWav(getResources().openRawResource(R.raw.sptest3_mobile_0ms));
                     int lag = 80;
 
                     OneThirdOctaveBands third = new OneThirdOctaveBands(sampleRate, OneThirdOctaveBands.FREQUENCY_BANDS.REDUCED, getActivity());
@@ -194,8 +194,8 @@ public class ProcessFragment extends Fragment {
     public double crossCorrelation(double[] x, double[] y, int l){
         double sumCorrelation = 0; // used to keep track of the sum amount for the correlation
         int smallerLength = min(x.length, y.length);
-        for (int i = l; i < smallerLength; i++) {
-            sumCorrelation += x[i] * y[i - l];
+        for (int i = l*44; i < smallerLength; i++) {
+            sumCorrelation += x[i] * y[i - l*44];
         }
         return sumCorrelation;
     }
