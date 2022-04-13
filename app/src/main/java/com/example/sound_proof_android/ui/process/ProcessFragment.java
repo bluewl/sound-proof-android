@@ -153,79 +153,7 @@ public class ProcessFragment extends Fragment {
             }
         });
 
-        postResultResponse.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
-                String url = "https://soundproof.azurewebsites.net/login/2faresponse";
 
-                KeyStore keyStore = null;
-                try {
-                    // result message for testing
-                    resultMessage = "true";
-
-                    keyStore = KeyStore.getInstance("AndroidKeyStore");
-                    keyStore.load(null);
-                    PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
-                    JSONObject postData = new JSONObject();
-
-                    postData.put("valid", resultMessage);
-                    postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
-
-                    String mRequestBody = postData.toString();
-
-                    StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
-                        @Override
-                        public void onResponse(String response) {
-                            // should return the string number "200" which means success
-                            Log.i("LOG_RESPONSE", response);
-                            Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
-                        }
-                    }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            Log.e("LOG_RESPONSE", error.toString());
-                        }
-                    }) {
-                        @Override
-                        public String getBodyContentType() {
-                            return "application/json; charset=utf-8";
-                        }
-
-                        @Override
-                        public byte[] getBody() throws AuthFailureError {
-                            try {
-                                return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
-                            } catch (UnsupportedEncodingException uee) {
-                                VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
-                                return null;
-                            }
-                        }
-
-                        @Override
-                        protected Response<String> parseNetworkResponse(NetworkResponse response) {
-                            String responseString = "";
-                            if (response != null) {
-                                responseString = String.valueOf(response.statusCode);
-                            }
-                            return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
-                        }
-                    };
-
-                    requestQueue.add(stringRequest);}
-                catch (KeyStoreException e) {
-                    e.printStackTrace();
-                } catch (CertificateException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
         processButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -261,8 +189,10 @@ public class ProcessFragment extends Fragment {
 
                     if(simScore > simThreshold){
                         System.out.println("Login Accepted - Similarity score passed.");
+                        postResultResponse(true);
                     } else {
                         System.out.println("Login Rejected - Similarity score failed.");
+                        postResultResponse(false);
                     }
                    // double simScore = similarityScore(filteredSignal, filteredSignalDup, lag, 24);
                    // System.out.println("Similary Score is " + simScore);
@@ -278,6 +208,84 @@ public class ProcessFragment extends Fragment {
 
         return v;
     }
+
+
+    // Used to send the post result response back to the server
+    // immediately after the sound processing is done
+    public void postResultResponse(boolean loginStatus) {
+        RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
+        String url = "https://soundproof.azurewebsites.net/login/2faresponse";
+
+        KeyStore keyStore = null;
+        try {
+            if(loginStatus){
+                resultMessage = "true";
+            } else {
+                resultMessage = "false";
+            }
+
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+
+            postData.put("valid", resultMessage);
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+
+            String mRequestBody = postData.toString();
+
+            StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    // should return the string number "200" which means success
+                    Log.i("LOG_RESPONSE", response);
+                    Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e("LOG_RESPONSE", error.toString());
+                }
+            }) {
+                @Override
+                public String getBodyContentType() {
+                    return "application/json; charset=utf-8";
+                }
+
+                @Override
+                public byte[] getBody() throws AuthFailureError {
+                    try {
+                        return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                    } catch (UnsupportedEncodingException uee) {
+                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                        return null;
+                    }
+                }
+
+                @Override
+                protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                    String responseString = "";
+                    if (response != null) {
+                        responseString = String.valueOf(response.statusCode);
+                    }
+                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                }
+            };
+            requestQueue.add(stringRequest);}
+        catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     public ByteBuffer ByteArrayToNumber(byte bytes[], int numOfBytes, int type){
         ByteBuffer buffer = ByteBuffer.allocate(numOfBytes);
