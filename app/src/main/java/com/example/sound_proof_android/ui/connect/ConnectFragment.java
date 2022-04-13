@@ -63,6 +63,7 @@ public class ConnectFragment extends Fragment {
     private Button submitButton;
     private Button qrButton;
     private TextView pubKeyText;
+    private String pubKey = "";
     // RSA variables
     private static final String TAG = "RSACryptor";
     private static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
@@ -115,12 +116,12 @@ public class ConnectFragment extends Fragment {
                 JSONObject postData = new JSONObject();
                 try {
 //                    postData.put("token", browserText.getText().toString());
-                    postData.put("token", "4189d0cc8ed13aa63c78b82938daab7d4481bcf53c0777cd972a538b8c886fa2");
-                    postData.put("key", pubKeyText.getText().toString());
+                    postData.put("token", "438dacc754aba034762814e602074557e36ad49435a6fc816536a429be9e08fb");
+                    postData.put("key", pubKey.replaceAll("\n", ""));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                System.out.println(pubKeyText.getText().toString());
+                System.out.println(pubKey.replaceAll("\n", ""));
                 String mRequestBody = postData.toString();
 
                 StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
@@ -208,7 +209,8 @@ public class ConnectFragment extends Fragment {
         String pubkey3 = publicKey.getEncoded().toString();
         Log.d(TAG,"publicKey3"+ pubkey3);
         Log.d(TAG,"publicKey2"+Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
-        pubKeyText.setText("Public Key: \n" + Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
+        pubKey = Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT);
+        pubKeyText.setText(Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
     }
 
     public String decrypt(final byte[] encryptedText){

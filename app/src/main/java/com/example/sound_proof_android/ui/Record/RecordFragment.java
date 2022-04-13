@@ -11,6 +11,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +23,18 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
 import com.example.sound_proof_android.SNTPClient;
@@ -37,8 +50,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -49,6 +68,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class RecordFragment extends Fragment {
@@ -56,6 +77,7 @@ public class RecordFragment extends Fragment {
     private Button startRec;
     private Button playRec;
     private Button syncTime;
+    private Button recordSignalButton;
     private TextView offset;
     private TextView localStartTime;
     private TextView ntpStartTime;
@@ -79,6 +101,7 @@ public class RecordFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
+
         RecordViewModel recordViewModel =
                 new ViewModelProvider(this).get(RecordViewModel.class);
 
@@ -93,11 +116,88 @@ public class RecordFragment extends Fragment {
         localStopTime = v.findViewById(R.id.localStopTimeText);
         ntpStopTime = v.findViewById(R.id.ntpStopTimeText);
         deviceTimeZone = Calendar.getInstance().getTimeZone();
-
+        recordSignalButton = v.findViewById(R.id.recordSignalButton);
         startRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startRecording();
+            }
+        });
+
+        recordSignalButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
+                RequestQueue queue = Volley.newRequestQueue(getActivity());
+                String url = "https://soundproof.azurewebsites.net/login/2farecordpolling";
+
+                // get public key
+                KeyStore keyStore = null;
+                try {
+                    keyStore = KeyStore.getInstance("AndroidKeyStore");
+                    keyStore.load(null);
+                    PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+                    JSONObject postData = new JSONObject();
+                    postData.put("key", "-----BEGIN PUBLIC KEY-----" + Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+                    String mRequestBody = postData.toString();
+
+                    StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            // returns string "200" which means success
+                            // the phone should start recording if (response.equals("200")) or something like that
+                            Log.i("LOG_RESPONSE", response);
+                            Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("LOG_RESPONSE", error.toString());
+                        }
+                    }) {
+                        @Override
+                        public String getBodyContentType() {
+                            return "application/json; charset=utf-8";
+                        }
+
+                        @Override
+                        public byte[] getBody() throws AuthFailureError {
+                            try {
+                                return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                            } catch (UnsupportedEncodingException uee) {
+                                VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                                return null;
+                            }
+                        }
+
+                        @Override
+                        protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                            String responseString = "";
+                            if (response != null) {
+                                responseString = String.valueOf(response.statusCode);
+                            }
+                            return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                        }
+                    };
+                    // setting timeout
+                    stringRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+                    // Access the RequestQueue through your singleton class.
+                    queue.add(stringRequest);
+                } catch (KeyStoreException e) {
+                    e.printStackTrace();
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                // GET REQUEST DONE
             }
         });
 
