@@ -10,28 +10,22 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.sound_proof_android.MainActivity;
+import com.example.sound_proof_android.R;
 import com.example.sound_proof_android.databinding.FragmentHomeBinding;
+
+import java.util.Calendar;
 
 public class HomeFragment extends Fragment {
 
-    private FragmentHomeBinding binding;
-
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        HomeViewModel homeViewModel =
-                new ViewModelProvider(this).get(HomeViewModel.class);
+        View v = inflater.inflate(R.layout.fragment_record, container, false);
 
-        binding = FragmentHomeBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
+        // Look for start recording signal (HTTP POST LONG POLLING)
+        ((MainActivity)getActivity()).receiveRecordStartSignal();
 
-        final TextView textView = binding.textHome;
-        homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
-        return root;
+        return v;
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
 }

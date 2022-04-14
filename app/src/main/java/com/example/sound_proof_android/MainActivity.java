@@ -1,6 +1,7 @@
 package com.example.sound_proof_android;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
@@ -10,12 +11,25 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 
@@ -30,9 +44,21 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.sound_proof_android.databinding.ActivityMainBinding;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.util.Calendar;
 import java.util.Date;
 import 	java.util.GregorianCalendar;
@@ -43,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityMainBinding binding;
+    private Record record;
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200; // Request code to record audio / access mic
 
@@ -52,19 +79,13 @@ public class MainActivity extends AppCompatActivity {
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        record = new Record(MainActivity.this);
         getCameraAccess();
         getMicrophoneAccess(); // requests microphone access from the user
         getExternalStorageAccess();
 
         setSupportActionBar(binding.appBarMain.toolbar);
-        binding.appBarMain.fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+
         DrawerLayout drawer = binding.drawerLayout;
         NavigationView navigationView = binding.navView;
         // Passing each menu ID as a set of Ids because each
@@ -78,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
     }
 
+    // PERMISSION REQUEST
+    // To access camera
     private void getCameraAccess() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -86,8 +109,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Requests permission to access the device's microphone
-    // if the user has not already granted access.
+    // PERMISSION REQUEST
+    // To access microphone
     private void getMicrophoneAccess(){
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -96,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // PERMISSION REQUEST
     // To access sdcard
     private void getExternalStorageAccess(){
         if (ContextCompat.checkSelfPermission(this,
@@ -105,6 +129,248 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // HTTP REQUEST
+    // Receives start recording signal from the server: This is when the phone should start recording
+    public void receiveRecordStartSignal() {
+        System.out.println("*** trying to receive record start signal ***");
+        // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "https://soundproof.azurewebsites.net/login/2farecordpolling";
+
+        // get public key
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+            String mRequestBody = postData.toString();
+
+            StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    if (response.equals("204")) {
+                        Log.i("LOG_RESPONSE", response + ": no signal. Retrying.");
+
+                        // Request again
+                        receiveRecordStartSignal();
+
+                    } else if (response.equals("200")) {
+                        Log.i("LOG_RESPONSE", response + ": signal received: Start recording.");
+
+                        // start recording
+                        record.startRecording();
+
+                        // Request for browser recording
+                        receiveBrowserAudio();
+                    }
+                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e("LOG_RESPONSE", error.toString());
+                }
+            }) {
+                @Override
+                public String getBodyContentType() {
+                    return "application/json; charset=utf-8";
+                }
+
+                @Override
+                public byte[] getBody() throws AuthFailureError {
+                    try {
+                        return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                    } catch (UnsupportedEncodingException uee) {
+                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                        return null;
+                    }
+                }
+
+                @Override
+                protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                    String responseString = "";
+                    if (response != null) {
+                        responseString = String.valueOf(response.statusCode);
+                    }
+                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                }
+            };
+            // setting timeout
+            stringRequest.setRetryPolicy(new DefaultRetryPolicy(30000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            // Access the RequestQueue through your singleton class.
+            queue.add(stringRequest);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        // GET REQUEST DONE
+    }
+
+    // HTTP REQUEST
+    // Downloads encrypted browser audio data
+    public void receiveBrowserAudio() {
+        // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
+
+        // get public key
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                    (Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // response returns a JSON file that includes time, key, iv, b64audio
+                            Log.i("LOG_RESPONSE", "Browser Audio Received");
+                            try {
+
+                                // Parse JSON file
+                                long browserStopTime = response.getLong("time");
+                                String key = response.getString("key");
+                                String iv = response.getString("iv");
+                                String b64audio = response.getString("b64audio");
+
+                                // Decrypt and save Browser wav file
+                                Cryptography crypt = new Cryptography(MainActivity.this);
+                                crypt.saveWav(crypt.aesDecrypt(b64audio, key, iv));
+
+                                // Sound Process then send post request of the result
+                                SoundProcess sp = new SoundProcess(MainActivity.this, record.getRecordStopTime(), browserStopTime);
+                                postResultResponse(sp.startProcess());
+                            } catch (JSONException | IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("LOG_RESPONSE", error.toString());
+                        }
+                    }) {
+                @Override
+                protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                    if (response != null) {
+                        System.out.println(response.statusCode);
+                    }
+                    return super.parseNetworkResponse(response);
+                }
+            };
+
+            // setting timeout
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            // Access the RequestQueue through your singleton class.
+            queue.add(jsonObjectRequest);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        // GET REQUEST DONE
+    }
+
+    // HTTP REQUEST
+    // Used to send the post result response back to the server
+    // immediately after the sound processing is done
+    public void postResultResponse(boolean loginStatus) {
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        String url = "https://soundproof.azurewebsites.net/login/2faresponse";
+
+        String resultMessage = "";
+        if(loginStatus){
+            resultMessage = "true";
+        } else {
+            resultMessage = "false";
+        }
+
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+
+            postData.put("valid", resultMessage);
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+
+            String mRequestBody = postData.toString();
+
+            StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    // should return the string number "200" which means success
+                    Log.i("LOG_RESPONSE", response);
+                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e("LOG_RESPONSE", error.toString());
+                }
+            }) {
+                @Override
+                public String getBodyContentType() {
+                    return "application/json; charset=utf-8";
+                }
+
+                @Override
+                public byte[] getBody() throws AuthFailureError {
+                    try {
+                        return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                    } catch (UnsupportedEncodingException uee) {
+                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                        return null;
+                    }
+                }
+
+                @Override
+                protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                    String responseString = "";
+                    if (response != null) {
+                        responseString = String.valueOf(response.statusCode);
+                    }
+                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                }
+            };
+            requestQueue.add(stringRequest);}
+        catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

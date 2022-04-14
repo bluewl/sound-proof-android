@@ -131,6 +131,19 @@ public class ConnectFragment extends Fragment {
 
         connectViewModel.getSelectedCode().observe(getViewLifecycleOwner(), enrollCode -> {
             createKey();
+            try {
+                getPublicKey();
+            } catch (KeyStoreException e) {
+                e.printStackTrace();
+            } catch (CertificateException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (UnrecoverableKeyException e) {
+                e.printStackTrace();
+            }
             connect(enrollCode);
         });
 

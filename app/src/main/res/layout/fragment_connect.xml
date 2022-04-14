@@ -6,6 +6,7 @@
     android:orientation="vertical"
     tools:context=".ui.connect.ConnectFragment"
     android:layout_centerInParent="true"
+    android:background="@android:color/black"
     android:gravity="center">
 
     <TextView

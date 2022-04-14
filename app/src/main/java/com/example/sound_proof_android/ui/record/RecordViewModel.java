@@ -8,11 +8,9 @@ public class RecordViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
 
-
     public RecordViewModel() {
         mText = new MutableLiveData<>();
     }
-
 
     public LiveData<String> getText() {
         return mText;

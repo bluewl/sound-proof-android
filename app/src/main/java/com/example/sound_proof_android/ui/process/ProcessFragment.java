@@ -29,8 +29,10 @@ import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.sound_proof_android.MainActivity;
 import com.example.sound_proof_android.OneThirdOctaveBands;
 import com.example.sound_proof_android.R;
+import com.example.sound_proof_android.Record;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,8 +73,6 @@ public class ProcessFragment extends Fragment {
     private Button processButton;
     private Button postResultResponse;
     private Button receiveBrowserAudio;
-    // "true" or "false"
-    String resultMessage = "";
 
     int type [] = {0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1};
     int numberOfBytes[] = {4, 4, 4, 4, 4, 2, 2, 4, 4, 2, 2, 4, 4};
@@ -92,13 +92,13 @@ public class ProcessFragment extends Fragment {
         postResultResponse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                postResultResponse(true);
+                ((MainActivity)getActivity()).postResultResponse(true);
             }
         });
         receiveBrowserAudio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                receiveBrowserAudio();
+                ((MainActivity)getActivity()).receiveBrowserAudio();
             }
         });
 
@@ -121,8 +121,12 @@ public class ProcessFragment extends Fragment {
 
                     // TEST: reading two wav file from res/raw (local) folder to compare
                     // note: sptest1 has around 80ms of lag from mobile audio to browser audio
-                    double[] mobileAudioData = readWav(getResources().openRawResource(R.raw.sptest3_browser_200ms));
-                    double[] browserAudioData = readWav(getResources().openRawResource(R.raw.sptest3_mobile_0ms));
+                    Record record = new Record(getActivity());
+                    String fileName = record.getSoundRecordingPath();
+                    InputStream mobileAudioWav = new FileInputStream(fileName+"/soundproof.wav");
+                    InputStream browserAudioWav = new FileInputStream(fileName+"/browseraudio.wav");
+                    double[] mobileAudioData = readWav(mobileAudioWav);
+                    double[] browserAudioData = readWav(browserAudioWav);
                     int lag = 80;
 
                     OneThirdOctaveBands third = new OneThirdOctaveBands(sampleRate, OneThirdOctaveBands.FREQUENCY_BANDS.REDUCED, getActivity());
@@ -138,10 +142,10 @@ public class ProcessFragment extends Fragment {
 
                     if(simScore > simThreshold){
                         System.out.println("Login Accepted - Similarity score passed.");
-                        postResultResponse(true);
+                        ((MainActivity)getActivity()).postResultResponse(true);
                     } else {
                         System.out.println("Login Rejected - Similarity score failed.");
-                        postResultResponse(false);
+                        ((MainActivity)getActivity()).postResultResponse(true);
                     }
                    // double simScore = similarityScore(filteredSignal, filteredSignalDup, lag, 24);
                    // System.out.println("Similary Score is " + simScore);
@@ -157,152 +161,6 @@ public class ProcessFragment extends Fragment {
 
         return v;
     }
-
-    public void receiveBrowserAudio() {
-        // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
-        RequestQueue queue = Volley.newRequestQueue(getActivity());
-        String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
-
-        // get public key
-        KeyStore keyStore = null;
-        try {
-            keyStore = KeyStore.getInstance("AndroidKeyStore");
-            keyStore.load(null);
-            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
-            JSONObject postData = new JSONObject();
-            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
-
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                    (Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            // response returns a JSON file that includes time, key, iv, b64audio
-                            System.out.println("test1");
-                            Log.i("LOG_RESPONSE", "Response: " + response);
-                            System.out.println("test2");
-                            // temp: testing to see if the json file is correct
-                            File json = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"test.json");
-                            try {
-                                FileOutputStream os = new FileOutputStream(json);
-                                os.write(response.toString().getBytes(Charset.forName("UTF-8")));
-                                os.close();
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            Log.e("LOG_RESPONSE", error.toString());
-                        }
-                    }) {
-                        @Override
-                        protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
-                            if (response != null) {
-                                System.out.println(response.statusCode);
-                            }
-                            return super.parseNetworkResponse(response);
-                        }
-                    };
-
-            // setting timeout
-            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
-                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-
-            // Access the RequestQueue through your singleton class.
-            queue.add(jsonObjectRequest);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        // GET REQUEST DONE
-    }
-    // Used to send the post result response back to the server
-    // immediately after the sound processing is done
-    public void postResultResponse(boolean loginStatus) {
-        RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
-        String url = "https://soundproof.azurewebsites.net/login/2faresponse";
-
-        KeyStore keyStore = null;
-        try {
-            if(loginStatus){
-                resultMessage = "true";
-            } else {
-                resultMessage = "false";
-            }
-
-            keyStore = KeyStore.getInstance("AndroidKeyStore");
-            keyStore.load(null);
-            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
-            JSONObject postData = new JSONObject();
-
-            postData.put("valid", resultMessage);
-            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
-
-            String mRequestBody = postData.toString();
-
-            StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
-                @Override
-                public void onResponse(String response) {
-                    // should return the string number "200" which means success
-                    Log.i("LOG_RESPONSE", response);
-                    Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("LOG_RESPONSE", error.toString());
-                }
-            }) {
-                @Override
-                public String getBodyContentType() {
-                    return "application/json; charset=utf-8";
-                }
-
-                @Override
-                public byte[] getBody() throws AuthFailureError {
-                    try {
-                        return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
-                    } catch (UnsupportedEncodingException uee) {
-                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
-                        return null;
-                    }
-                }
-
-                @Override
-                protected Response<String> parseNetworkResponse(NetworkResponse response) {
-                    String responseString = "";
-                    if (response != null) {
-                        responseString = String.valueOf(response.statusCode);
-                    }
-                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
-                }
-            };
-            requestQueue.add(stringRequest);}
-        catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-
 
     public ByteBuffer ByteArrayToNumber(byte bytes[], int numOfBytes, int type){
         ByteBuffer buffer = ByteBuffer.allocate(numOfBytes);
@@ -345,7 +203,7 @@ public class ProcessFragment extends Fragment {
             if (i == 9) {blockAlign = byteBuffer.getShort();System.out.println("blockAlign " + blockAlign);}
             if (i == 10) {bitsPerSample = byteBuffer.getShort();System.out.println("bitsPerSample " + bitsPerSample);}
             if (i == 11) {
-                subChunk2ID = new String(byteArray) ;
+                subChunk2ID = new String(byteArray);
                 if(subChunk2ID.compareTo("data") == 0) {
                     continue;
                 }

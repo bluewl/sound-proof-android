@@ -130,6 +130,7 @@ public class WavRecorder {
             recordingThread = null;
         }
 
+        // later change to +"/mobileaudio.wav"
         copyWaveFile(getTempFilename(), getFilename()+"/soundproof.wav");
         deleteTempFile();
     }
