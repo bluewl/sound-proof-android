@@ -8,21 +8,15 @@
     android:layout_centerInParent="true"
     android:gravity="center">
 
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <Button
         android:id="@+id/qrButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="QR Code" />
-
-    <Button
-        android:id="@+id/submitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=" Submit " />
-
-    <TextView
-        android:id="@+id/pubKeyText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 
 </LinearLayout>

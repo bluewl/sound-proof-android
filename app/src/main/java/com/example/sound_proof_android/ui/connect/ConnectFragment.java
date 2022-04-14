@@ -1,5 +1,7 @@
 package com.example.sound_proof_android.ui.connect;
 
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -8,6 +10,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 
+import android.preference.PreferenceManager;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
@@ -59,9 +62,11 @@ import static androidx.navigation.fragment.NavHostFragment.findNavController;
 public class ConnectFragment extends Fragment {
 
     private ConnectViewModel connectViewModel;
-    private Button submitButton;
     private Button qrButton;
-    private TextView pubKeyText;
+    private TextView statusText;
+
+    SharedPreferences sharedPref;
+
     private String pubKey = "";
     private String code = "";
     // RSA variables
@@ -82,14 +87,22 @@ public class ConnectFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_connect, container, false);
 
-        submitButton = v.findViewById(R.id.submitButton);
         qrButton = v.findViewById(R.id.qrButton);
-        pubKeyText = v.findViewById(R.id.pubKeyText);
+        statusText = v.findViewById(R.id.statusText);
 
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String code = sharedPref.getString("enrollmentCode", "");
+        if (code.equals("")) {
+            statusText.setText("NOT ENROLLED");
+            statusText.setTextColor(Color.RED);
+        } else if (code.length() == 64) {
+            statusText.setText("ENROLLED");
+            statusText.setTextColor(Color.GREEN);
+        }
         connectViewModel = new ViewModelProvider(requireActivity()).get(ConnectViewModel.class);
 
         try {
-            displayKey();
+            getPublicKey();
         } catch (KeyStoreException e) {
             e.printStackTrace();
         } catch (CertificateException e) {
@@ -108,14 +121,6 @@ public class ConnectFragment extends Fragment {
 //        Log.d(TAG,"DECRYPT "+ decrypt(decryptBytes));
 //        // USE ABOVE CODE TO DECRYPT
 
-        submitButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                createKey();
-                connect();
-            }
-        });
-
         qrButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -124,23 +129,23 @@ public class ConnectFragment extends Fragment {
             }
         });
 
-        connectViewModel.getSelectedCode().observe(getViewLifecycleOwner(), code -> {
+        connectViewModel.getSelectedCode().observe(getViewLifecycleOwner(), enrollCode -> {
             createKey();
-            connect();
+            connect(enrollCode);
         });
 
         return v;
     }
 
-    public void connect() {
+    public void connect(String code) {
         RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
         String url = "https://soundproof.azurewebsites.net/tokenenrollment";
 
-        System.out.println("TESTING2");
+        SharedPreferences.Editor editor = sharedPref.edit();
+
         JSONObject postData = new JSONObject();
         try {
-//                    postData.put("token", browserText.getText().toString());
-            postData.put("token", "6d2ed4de45fbd81ee0e95137f5b2d15769b280e4f39e43d2e8c42e00052a4433");
+            postData.put("token", code);
             postData.put("key", pubKey.replaceAll("\n", ""));
         } catch (JSONException e) {
             e.printStackTrace();
@@ -151,13 +156,23 @@ public class ConnectFragment extends Fragment {
         StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                Log.i("LOG_RESPONSE", response);
-                Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                if (response.equals("200")) {
+                    statusText.setText("ENROLLED");
+                    statusText.setTextColor(Color.GREEN);
+                    editor.putString("enrollmentCode", code);
+                    editor.apply();
+                    Toast.makeText(getActivity(), "Enrollment Success", Toast.LENGTH_LONG).show();
+                }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e("LOG_RESPONSE", error.toString());
+                statusText.setText("NOT ENROLLED");
+                statusText.setTextColor(Color.RED);
+                editor.putString("enrollmentCode", "");
+                editor.apply();
+                Toast.makeText(getActivity(), "Enrollment Failed", Toast.LENGTH_LONG).show();
             }
         }) {
             @Override
@@ -187,6 +202,7 @@ public class ConnectFragment extends Fragment {
 
         requestQueue.add(stringRequest);
     }
+
     // server should make sure to use PKCS1 padding
     public void createKey(){
         try {
@@ -209,20 +225,14 @@ public class ConnectFragment extends Fragment {
 
     // displays the public key of the phone
     // if the keystore is empty, both public and private key is created
-    public void displayKey() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    public void getPublicKey() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
         if (!keyStore.containsAlias("spKey")) {
             createKey();
         }
         PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
-
-//        Log.d(TAG,"publicKey1"+publicKey);
-        String pubkey3 = publicKey.getEncoded().toString();
-//        Log.d(TAG,"publicKey3"+ pubkey3);
-//        Log.d(TAG,"publicKey2"+Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
         pubKey = Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT);
-        pubKeyText.setText(Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
     }
 
     public String decrypt(final byte[] encryptedText){
