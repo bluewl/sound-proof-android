@@ -2,21 +2,51 @@ package com.example.sound_proof_android;
 
 import android.content.Context;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Base64;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Cryptography {
 
     private Context context;
+    private static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
 
     public Cryptography(Context context) {
         this.context = context;
+    }
+
+    public String rsaDecrypt(final byte[] encryptedText){
+        try{
+            KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PrivateKey privateKey = (PrivateKey) keyStore.getKey("spKey", null);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE,privateKey);
+            byte[] decryptedText = cipher.doFinal(encryptedText);
+            return new String(decryptedText);
+        }catch (UnrecoverableKeyException | IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e){
+            Log.e("decrypt catch", e.getMessage()+"");
+            e.printStackTrace();
+            return null;
+        }
+
     }
 
     // Decrypting audio file with AES encryption
@@ -33,11 +63,6 @@ public class Cryptography {
             cipher.init(Cipher.DECRYPT_MODE, keyspec, ivspec);
 
             byte[] decrypted = cipher.doFinal(encrypted1);
-
-            //just for testing, output should be the same as the data string
-            String originalString = new String(decrypted);
-            System.out.println(originalString.trim());
-            //
 
             return decrypted;
         }

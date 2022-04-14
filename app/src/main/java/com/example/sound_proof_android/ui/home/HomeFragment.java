@@ -20,7 +20,7 @@ public class HomeFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_record, container, false);
+        View v = inflater.inflate(R.layout.fragment_home, container, false);
 
         // Look for start recording signal (HTTP POST LONG POLLING)
         ((MainActivity)getActivity()).receiveRecordStartSignal();

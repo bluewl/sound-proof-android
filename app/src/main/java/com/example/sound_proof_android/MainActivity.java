@@ -250,7 +250,9 @@ public class MainActivity extends AppCompatActivity {
 
                                 // Decrypt and save Browser wav file
                                 Cryptography crypt = new Cryptography(MainActivity.this);
-                                crypt.saveWav(crypt.aesDecrypt(b64audio, key, iv));
+                                String decryptedAESkey = crypt.rsaDecrypt(Base64.decode(key, Base64.DEFAULT));
+                                System.out.println("decrypted AES key: " + decryptedAESkey);
+                                crypt.saveWav(crypt.aesDecrypt(b64audio, decryptedAESkey, iv));
 
                                 // Sound Process then send post request of the result
                                 SoundProcess sp = new SoundProcess(MainActivity.this, record.getRecordStopTime(), browserStopTime);

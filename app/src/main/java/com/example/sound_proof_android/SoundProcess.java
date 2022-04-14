@@ -36,7 +36,7 @@ public class SoundProcess {
         // TEST
         System.out.println("mobile: " + mobileStopTime);
         System.out.println("browser: " + browserStopTime);
-        System.out.println(lag);
+        System.out.println("lag: " + lag);
         //
 
         Record record = new Record(context);
@@ -186,6 +186,7 @@ public class SoundProcess {
         }
         System.out.println("******** signal length ********");
         System.out.println(data.length);
+        System.out.println("*******************************");
         audioSignal.setAudioData(data);
         return audioSignal;
     }

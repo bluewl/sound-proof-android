@@ -97,10 +97,8 @@ public class Record {
                         String stopServerTimeStr = readStream(in);
                         long responseTime = System.currentTimeMillis();
                         long latency = (responseTime-requestTime)/2;
-                        System.out.println("**************************"+latency);
                         double stopServerTime = Double.parseDouble(stopServerTimeStr);
                         recordStopTime = latency + (long) stopServerTime;
-                        System.out.println("**************************"+recordStopTime);
                         urlConnection.disconnect();
                     } catch (Exception e) {
                         Log.d("*** serverExceptionTag", "Server time exception: " + e);
