@@ -59,7 +59,6 @@ import javax.crypto.NoSuchPaddingException;
 public class ConnectFragment extends Fragment {
 
     private ConnectViewModel mViewModel;
-    private EditText browserText;
     private Button submitButton;
     private Button qrButton;
     private TextView pubKeyText;
@@ -82,7 +81,6 @@ public class ConnectFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_connect, container, false);
 
-        browserText = v.findViewById(R.id.browserText);
         submitButton = v.findViewById(R.id.submitButton);
         qrButton = v.findViewById(R.id.qrButton);
         pubKeyText = v.findViewById(R.id.pubKeyText);
@@ -101,67 +99,17 @@ public class ConnectFragment extends Fragment {
             e.printStackTrace();
         }
 
-        // TEST CODE TO CHECK IF BROWSER ENCRYPT WORKED BY DECRYPTING THE ENCRYPTED MESSAGE
-        String text = "YnDAnYk8yKfD7PN6yKV0zGgGrk1h291E74Gei0tFsfPYe3B08h7i2zS6HqBhQo1EjTbDWIOGdh6ESIZ2j6PCLxgqSujR+5ai43W4SQfdF8ygDCF5F+wQPHNQhLw0m9pDr4epZu17SujUbRsOHxVJK6BTQnyVJR4bhlex4gJ2RZbJrFVx7U7Ch+k34yEcoWlNc4HP8qgmteq/Cwd80qV6tVqRU6MeNv0WVKmLtuk9bbV2xmIZmQ99naLcZxoe3t6tDcMufH2vpuWNp8cFMpMBn6v2JBgmHP05hdcLdSz/DzrvnH/beLRPVRV/OuzMg+iTTIJue1Hje4DEo8xgEb50yA==";
-        byte[] decryptBytes = Base64.decode(text, Base64.DEFAULT);
-        Log.d(TAG,"DECRYPT "+ decrypt(decryptBytes));
-        // USE ABOVE CODE TO DECRYPT
+//        // TEST CODE TO CHECK IF BROWSER ENCRYPT WORKED BY DECRYPTING THE ENCRYPTED MESSAGE
+//        String text = "YnDAnYk8yKfD7PN6yKV0zGgGrk1h291E74Gei0tFsfPYe3B08h7i2zS6HqBhQo1EjTbDWIOGdh6ESIZ2j6PCLxgqSujR+5ai43W4SQfdF8ygDCF5F+wQPHNQhLw0m9pDr4epZu17SujUbRsOHxVJK6BTQnyVJR4bhlex4gJ2RZbJrFVx7U7Ch+k34yEcoWlNc4HP8qgmteq/Cwd80qV6tVqRU6MeNv0WVKmLtuk9bbV2xmIZmQ99naLcZxoe3t6tDcMufH2vpuWNp8cFMpMBn6v2JBgmHP05hdcLdSz/DzrvnH/beLRPVRV/OuzMg+iTTIJue1Hje4DEo8xgEb50yA==";
+//        byte[] decryptBytes = Base64.decode(text, Base64.DEFAULT);
+//        Log.d(TAG,"DECRYPT "+ decrypt(decryptBytes));
+//        // USE ABOVE CODE TO DECRYPT
 
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
-                String url = "https://soundproof.azurewebsites.net/tokenenrollment";
-
-                JSONObject postData = new JSONObject();
-                try {
-//                    postData.put("token", browserText.getText().toString());
-                    postData.put("token", "438dacc754aba034762814e602074557e36ad49435a6fc816536a429be9e08fb");
-                    postData.put("key", pubKey.replaceAll("\n", ""));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                System.out.println(pubKey.replaceAll("\n", ""));
-                String mRequestBody = postData.toString();
-
-                StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        Log.i("LOG_RESPONSE", response);
-                        Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e("LOG_RESPONSE", error.toString());
-                    }
-                }) {
-                    @Override
-                    public String getBodyContentType() {
-                        return "application/json; charset=utf-8";
-                    }
-
-                    @Override
-                    public byte[] getBody() throws AuthFailureError {
-                        try {
-                            return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
-                        } catch (UnsupportedEncodingException uee) {
-                            VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
-                            return null;
-                        }
-                    }
-
-                    @Override
-                    protected Response<String> parseNetworkResponse(NetworkResponse response) {
-                        String responseString = "";
-                        if (response != null) {
-                            responseString = String.valueOf(response.statusCode);
-                        }
-                        return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
-                    }
-                };
-
-                requestQueue.add(stringRequest);
+                createKey();
+                connect();
             }
         });
 
@@ -175,6 +123,60 @@ public class ConnectFragment extends Fragment {
         return v;
     }
 
+    public void connect() {
+        RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
+        String url = "https://soundproof.azurewebsites.net/tokenenrollment";
+
+        JSONObject postData = new JSONObject();
+        try {
+//                    postData.put("token", browserText.getText().toString());
+            postData.put("token", "6d2ed4de45fbd81ee0e95137f5b2d15769b280e4f39e43d2e8c42e00052a4433");
+            postData.put("key", pubKey.replaceAll("\n", ""));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        System.out.println(pubKey.replaceAll("\n", ""));
+        String mRequestBody = postData.toString();
+
+        StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i("LOG_RESPONSE", response);
+                Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("LOG_RESPONSE", error.toString());
+            }
+        }) {
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                try {
+                    return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                } catch (UnsupportedEncodingException uee) {
+                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                    return null;
+                }
+            }
+
+            @Override
+            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                String responseString = "";
+                if (response != null) {
+                    responseString = String.valueOf(response.statusCode);
+                }
+                return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+            }
+        };
+
+        requestQueue.add(stringRequest);
+    }
     // server should make sure to use PKCS1 padding
     public void createKey(){
         try {

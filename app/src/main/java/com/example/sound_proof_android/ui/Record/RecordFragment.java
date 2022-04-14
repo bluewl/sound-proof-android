@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.android.volley.AuthFailureError;
@@ -39,6 +40,7 @@ import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
 import com.example.sound_proof_android.SNTPClient;
 import com.example.sound_proof_android.WavRecorder;
+import com.example.sound_proof_android.ui.process.ProcessFragment;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.*;
@@ -47,12 +49,15 @@ import android.content.Context;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -127,77 +132,7 @@ public class RecordFragment extends Fragment {
         recordSignalButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
-                RequestQueue queue = Volley.newRequestQueue(getActivity());
-                String url = "https://soundproof.azurewebsites.net/login/2farecordpolling";
-
-                // get public key
-                KeyStore keyStore = null;
-                try {
-                    keyStore = KeyStore.getInstance("AndroidKeyStore");
-                    keyStore.load(null);
-                    PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
-                    JSONObject postData = new JSONObject();
-                    postData.put("key", "-----BEGIN PUBLIC KEY-----" + Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
-                    String mRequestBody = postData.toString();
-
-                    StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
-                        @Override
-                        public void onResponse(String response) {
-                            // returns string "200" which means success
-                            // the phone should start recording if (response.equals("200")) or something like that
-                            Log.i("LOG_RESPONSE", response);
-                            Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
-                        }
-                    }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            Log.e("LOG_RESPONSE", error.toString());
-                        }
-                    }) {
-                        @Override
-                        public String getBodyContentType() {
-                            return "application/json; charset=utf-8";
-                        }
-
-                        @Override
-                        public byte[] getBody() throws AuthFailureError {
-                            try {
-                                return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
-                            } catch (UnsupportedEncodingException uee) {
-                                VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
-                                return null;
-                            }
-                        }
-
-                        @Override
-                        protected Response<String> parseNetworkResponse(NetworkResponse response) {
-                            String responseString = "";
-                            if (response != null) {
-                                responseString = String.valueOf(response.statusCode);
-                            }
-                            return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
-                        }
-                    };
-                    // setting timeout
-                    stringRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
-                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-
-                    // Access the RequestQueue through your singleton class.
-                    queue.add(stringRequest);
-                } catch (KeyStoreException e) {
-                    e.printStackTrace();
-                } catch (CertificateException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                // GET REQUEST DONE
+                recieveRecordStart();
             }
         });
 
@@ -216,6 +151,158 @@ public class RecordFragment extends Fragment {
         });
 
         return v;
+    }
+
+    public void recieveRecordStart() {
+        System.out.println("*** USER LOGGED IN ***");
+        // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
+        RequestQueue queue = Volley.newRequestQueue(getActivity());
+        String url = "https://soundproof.azurewebsites.net/login/2farecordpolling";
+
+        // get public key
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+            String mRequestBody = postData.toString();
+
+            StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    // returns string "200" which means success
+                    // the phone should start recording if (response.equals("200")) or something like that
+                    Log.i("LOG_RESPONSE", response);
+                    System.out.println("hi you are in response");
+                    if (response.equals("204")) {
+                        recieveRecordStart();
+                    } else if (response.equals("200")) {
+                        receiveBrowserAudio();
+                    }
+                    Toast.makeText(getActivity(), "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e("LOG_RESPONSE", error.toString());
+                }
+            }) {
+                @Override
+                public String getBodyContentType() {
+                    return "application/json; charset=utf-8";
+                }
+
+                @Override
+                public byte[] getBody() throws AuthFailureError {
+                    try {
+                        return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+                    } catch (UnsupportedEncodingException uee) {
+                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+                        return null;
+                    }
+                }
+
+                @Override
+                protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                    String responseString = "";
+                    if (response != null) {
+                        responseString = String.valueOf(response.statusCode);
+                    }
+                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                }
+            };
+            // setting timeout
+            stringRequest.setRetryPolicy(new DefaultRetryPolicy(30000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            // Access the RequestQueue through your singleton class.
+            queue.add(stringRequest);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        // GET REQUEST DONE
+    }
+
+    // temporary (already exist in process fragment but it will all be combined)
+    public void receiveBrowserAudio() {
+        // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
+        RequestQueue queue = Volley.newRequestQueue(getActivity());
+        String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
+
+        // get public key
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                    (Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // response returns a JSON file that includes time, key, iv, b64audio
+                            System.out.println("test1");
+                            Log.i("LOG_RESPONSE", "Response: " + response);
+                            System.out.println("test2");
+                            // temp: testing to see if the json file is correct
+                            File json = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"test.json");
+                            try {
+                                FileOutputStream os = new FileOutputStream(json);
+                                os.write(response.toString().getBytes(Charset.forName("UTF-8")));
+                                os.close();
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("LOG_RESPONSE", error.toString());
+                        }
+                    }) {
+                @Override
+                protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                    if (response != null) {
+                        System.out.println(response.statusCode);
+                    }
+                    return super.parseNetworkResponse(response);
+                }
+            };
+
+            // setting timeout
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            // Access the RequestQueue through your singleton class.
+            queue.add(jsonObjectRequest);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        // GET REQUEST DONE
     }
 
     // Begins recording from the user's microphone and automatically stops recording after 3 seconds.

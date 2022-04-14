@@ -89,67 +89,16 @@ public class ProcessFragment extends Fragment {
         postResultResponse = v.findViewById(R.id.postResultResponse);
         receiveBrowserAudio = v.findViewById(R.id.receiveBrowserAudio);
 
+        postResultResponse.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                postResultResponse(true);
+            }
+        });
         receiveBrowserAudio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
-                RequestQueue queue = Volley.newRequestQueue(getActivity());
-                String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
-
-                // get public key
-                KeyStore keyStore = null;
-                try {
-                    keyStore = KeyStore.getInstance("AndroidKeyStore");
-                    keyStore.load(null);
-                    PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
-                    JSONObject postData = new JSONObject();
-                    postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
-
-                    JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                            (Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
-                                @Override
-                                public void onResponse(JSONObject response) {
-                                    // response returns a JSON file that includes time, key, iv, b64audio
-                                    Log.i("LOG_RESPONSE", "Response: " + response.toString());
-
-                                    // temp: testing to see if the json file is correct
-                                    File json = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"test.json");
-                                    try {
-                                        FileOutputStream os = new FileOutputStream(json);
-                                        os.write(response.toString().getBytes(Charset.forName("UTF-8")));
-                                        os.close();
-                                    } catch (FileNotFoundException e) {
-                                        e.printStackTrace();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }, new Response.ErrorListener() {
-                                @Override
-                                public void onErrorResponse(VolleyError error) {
-                                    Log.e("LOG_RESPONSE", error.toString());
-                                }
-                            });
-
-                    // setting timeout
-                    jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
-                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-
-                    // Access the RequestQueue through your singleton class.
-                    queue.add(jsonObjectRequest);
-                } catch (KeyStoreException e) {
-                    e.printStackTrace();
-                } catch (CertificateException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                // GET REQUEST DONE
+                receiveBrowserAudio();
             }
         });
 
@@ -209,7 +158,75 @@ public class ProcessFragment extends Fragment {
         return v;
     }
 
+    public void receiveBrowserAudio() {
+        // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
+        RequestQueue queue = Volley.newRequestQueue(getActivity());
+        String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
 
+        // get public key
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
+            JSONObject postData = new JSONObject();
+            postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
+
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                    (Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // response returns a JSON file that includes time, key, iv, b64audio
+                            System.out.println("test1");
+                            Log.i("LOG_RESPONSE", "Response: " + response);
+                            System.out.println("test2");
+                            // temp: testing to see if the json file is correct
+                            File json = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"test.json");
+                            try {
+                                FileOutputStream os = new FileOutputStream(json);
+                                os.write(response.toString().getBytes(Charset.forName("UTF-8")));
+                                os.close();
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("LOG_RESPONSE", error.toString());
+                        }
+                    }) {
+                        @Override
+                        protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                            if (response != null) {
+                                System.out.println(response.statusCode);
+                            }
+                            return super.parseNetworkResponse(response);
+                        }
+                    };
+
+            // setting timeout
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(25000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            // Access the RequestQueue through your singleton class.
+            queue.add(jsonObjectRequest);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        // GET REQUEST DONE
+    }
     // Used to send the post result response back to the server
     // immediately after the sound processing is done
     public void postResultResponse(boolean loginStatus) {
