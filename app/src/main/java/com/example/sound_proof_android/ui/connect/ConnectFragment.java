@@ -1,11 +1,12 @@
 package com.example.sound_proof_android.ui.connect;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -16,7 +17,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,10 +28,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.HttpHeaderParser;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
 
 import org.json.JSONException;
@@ -56,13 +54,16 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import static androidx.navigation.fragment.NavHostFragment.findNavController;
+
 public class ConnectFragment extends Fragment {
 
-    private ConnectViewModel mViewModel;
+    private ConnectViewModel connectViewModel;
     private Button submitButton;
     private Button qrButton;
     private TextView pubKeyText;
     private String pubKey = "";
+    private String code = "";
     // RSA variables
     private static final String TAG = "RSACryptor";
     private static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
@@ -84,6 +85,8 @@ public class ConnectFragment extends Fragment {
         submitButton = v.findViewById(R.id.submitButton);
         qrButton = v.findViewById(R.id.qrButton);
         pubKeyText = v.findViewById(R.id.pubKeyText);
+
+        connectViewModel = new ViewModelProvider(requireActivity()).get(ConnectViewModel.class);
 
         try {
             displayKey();
@@ -116,10 +119,16 @@ public class ConnectFragment extends Fragment {
         qrButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), QRCodeActivity.class);
-                startActivity(intent);
+                NavController navController = findNavController(ConnectFragment.this);
+                navController.navigate(R.id.action_nav_connect_to_nav_qrcode);
             }
         });
+
+        connectViewModel.getSelectedCode().observe(getViewLifecycleOwner(), code -> {
+            createKey();
+            connect();
+        });
+
         return v;
     }
 
@@ -127,6 +136,7 @@ public class ConnectFragment extends Fragment {
         RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
         String url = "https://soundproof.azurewebsites.net/tokenenrollment";
 
+        System.out.println("TESTING2");
         JSONObject postData = new JSONObject();
         try {
 //                    postData.put("token", browserText.getText().toString());
@@ -207,10 +217,10 @@ public class ConnectFragment extends Fragment {
         }
         PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
 
-        Log.d(TAG,"publicKey1"+publicKey);
+//        Log.d(TAG,"publicKey1"+publicKey);
         String pubkey3 = publicKey.getEncoded().toString();
-        Log.d(TAG,"publicKey3"+ pubkey3);
-        Log.d(TAG,"publicKey2"+Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
+//        Log.d(TAG,"publicKey3"+ pubkey3);
+//        Log.d(TAG,"publicKey2"+Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
         pubKey = Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT);
         pubKeyText.setText(Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT));
     }
@@ -256,5 +266,4 @@ public class ConnectFragment extends Fragment {
         Log.d(TAG, "encry"+encryptedBytes.toString());
         return encryptedBytes;
     }
-
 }

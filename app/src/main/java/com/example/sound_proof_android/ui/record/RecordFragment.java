@@ -1,16 +1,13 @@
-package com.example.sound_proof_android.ui.Record;
+package com.example.sound_proof_android.ui.record;
 
 import android.Manifest;
 import android.content.ContextWrapper;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,9 +16,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.android.volley.AuthFailureError;
@@ -36,15 +31,9 @@ import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.sound_proof_android.QRCodeActivity;
 import com.example.sound_proof_android.R;
 import com.example.sound_proof_android.SNTPClient;
 import com.example.sound_proof_android.WavRecorder;
-import com.example.sound_proof_android.ui.process.ProcessFragment;
-
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.*;
-import android.content.Context;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -66,9 +55,7 @@ import java.security.cert.CertificateException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.UUID;
 
-import android.provider.Settings;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;

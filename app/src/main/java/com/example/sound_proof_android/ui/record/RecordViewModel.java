@@ -1,4 +1,4 @@
-package com.example.sound_proof_android.ui.Record;
+package com.example.sound_proof_android.ui.record;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
