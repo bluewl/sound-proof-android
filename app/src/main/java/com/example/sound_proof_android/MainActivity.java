@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_connect, R.id.nav_process, R.id.nav_record)
+                R.id.nav_home, R.id.nav_connect)
                 .setOpenableLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
@@ -233,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
     public void receiveBrowserAudio() {
 
         // current action message updated
-        currentActionText.setText("Working with browser recording file...");
+        currentActionText.setText("Comparing Sound...");
         currentActionText.setTextColor(Color.CYAN);
 
         // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
@@ -321,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
         String resultMessage = "";
         if(loginStatus){
             // current action message updated
-            currentActionText.setText("Login Success");
+            currentActionText.setText("Login Successful");
             currentActionText.setTextColor(Color.GREEN);
 
             resultMessage = "true";

@@ -10,13 +10,6 @@
         android:name="com.example.sound_proof_android.ui.home.HomeFragment"
         android:label="@string/menu_home"
         tools:layout="@layout/fragment_home" />
-
-    <fragment
-        android:id="@+id/nav_record"
-        android:name="com.example.sound_proof_android.ui.record.RecordFragment"
-        android:label="@string/menu_record"
-        tools:layout="@layout/fragment_record" />
-
     <fragment
         android:id="@+id/nav_connect"
         android:name="com.example.sound_proof_android.ui.connect.ConnectFragment"
@@ -26,12 +19,6 @@
             android:id="@+id/action_nav_connect_to_nav_qrcode"
             app:destination="@id/nav_qrcode" />
     </fragment>
-
-    <fragment
-        android:id="@+id/nav_process"
-        android:name="com.example.sound_proof_android.ui.process.ProcessFragment"
-        android:label="@string/menu_process"
-        tools:layout="@layout/fragment_process" />
 
     <fragment
         android:id="@+id/nav_qrcode"
