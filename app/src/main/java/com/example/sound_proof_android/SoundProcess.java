@@ -6,6 +6,7 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import android.content.Context;
+import android.widget.Toast;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,7 +33,8 @@ public class SoundProcess {
     public SoundProcess(Context context, long mobileStopTime, long browserStopTime) throws IOException {
         this.context = context;
 
-        lag = (int) Math.abs(mobileStopTime-browserStopTime) - 3000;
+        lag = (int) Math.abs((int) Math.abs(mobileStopTime-browserStopTime) - 3000);
+
         // TEST
         System.out.println("mobile: " + mobileStopTime);
         System.out.println("browser: " + browserStopTime);
@@ -73,9 +75,11 @@ public class SoundProcess {
         System.out.println("Similary Score is " + simScore);
 
         if(simScore > simThreshold){
+            Toast.makeText(context, "Lag: " + lag + "\nSimilarity Score: " + simScore, Toast.LENGTH_LONG).show();
             System.out.println("Login Accepted - Similarity score passed.");
             return true;
         } else {
+            Toast.makeText(context, "Lag: " + lag + "\nSimilarity Score: " + simScore, Toast.LENGTH_LONG).show();
             System.out.println("Login Rejected - Similarity score failed.");
             return false;
         }
@@ -84,7 +88,7 @@ public class SoundProcess {
     // Used to compute the similarity score by determining the average
     // from the max cross-correlation across signals x[i] and y[i].
     public double similarityScore(double[][] x, double[][] y, int l){
-//        if(l > 150) return 0.0; // reject the audio if there is a lag greater than 150ms
+        if(l > 700) return 0.0; // reject the audio if there is a lag greater than 300ms
 
         System.out.println("************ ENTERING SIMILARITY SCORE TESTING");
         System.out.println(x.length);
@@ -100,7 +104,9 @@ public class SoundProcess {
 
     public float maxCrossCorrelation(double[] x, double[] y, int l) {
         float max = normalize(x,y,0);
-        for (int i = 1; i < 300; i++) {
+        int init = l - 200;
+        if (init < 0) { init = 0; }
+        for (int i = init; i < l+200; i++) {
             max = max(normalize(x,y,i), max);
         }
         return max;
