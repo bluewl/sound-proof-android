@@ -15,6 +15,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class WavRecorder {
     private static final int RECORDER_BPP = 16;
@@ -167,6 +170,12 @@ public class WavRecorder {
 
             in.close();
             out.close();
+
+
+            // temp test: downloading recorded mobile audio data in the download folder
+//            File test = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"testingMobile5.wav");
+//            Files.copy(Paths.get(outFilename), test.toPath());
+            // temp test: done
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

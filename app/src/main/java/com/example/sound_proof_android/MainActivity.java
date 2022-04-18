@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.media.AudioFormat;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -30,6 +31,7 @@ import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.sound_proof_android.ui.home.HomeFragment;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 
@@ -72,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityMainBinding binding;
     private Record record;
+    private TextView currentActionText;
 
     private static final int REQUEST_PERMISSION_CODE = 200; // Request code to record audio / access mic
 
@@ -98,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+
+        currentActionText = (TextView) findViewById(R.id.currentActionText);
     }
 
     // PERMISSION REQUEST
@@ -127,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
     // HTTP REQUEST
     // Receives start recording signal from the server: This is when the phone should start recording
     public void receiveRecordStartSignal() {
+
         System.out.println("*** trying to receive record start signal ***");
         // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
         RequestQueue queue = Volley.newRequestQueue(this);
@@ -148,10 +154,19 @@ public class MainActivity extends AppCompatActivity {
                     if (response.equals("204")) {
                         Log.i("LOG_RESPONSE", response + ": no signal. Retrying.");
 
+                        // current action message updated
+                        currentActionText.setText("Waiting for start record signal...");
+                        currentActionText.setTextColor(Color.YELLOW);
+
                         // Request again
                         receiveRecordStartSignal();
 
                     } else if (response.equals("200")) {
+
+                        // current action message updated
+                        currentActionText.setText("Recording...");
+                        currentActionText.setTextColor(Color.MAGENTA);
+
                         Log.i("LOG_RESPONSE", response + ": signal received: Start recording.");
 
                         // start recording
@@ -160,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
                         // Request for browser recording
                         receiveBrowserAudio();
                     }
-                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+//                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -216,6 +231,11 @@ public class MainActivity extends AppCompatActivity {
     // HTTP REQUEST
     // Downloads encrypted browser audio data
     public void receiveBrowserAudio() {
+
+        // current action message updated
+        currentActionText.setText("Working with browser recording file...");
+        currentActionText.setTextColor(Color.CYAN);
+
         // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
@@ -300,8 +320,16 @@ public class MainActivity extends AppCompatActivity {
 
         String resultMessage = "";
         if(loginStatus){
+            // current action message updated
+            currentActionText.setText("Login Success");
+            currentActionText.setTextColor(Color.GREEN);
+
             resultMessage = "true";
         } else {
+            // current action message updated
+            currentActionText.setText("Login Failed\n\n  Try again");
+            currentActionText.setTextColor(Color.RED);
+
             resultMessage = "false";
         }
 
@@ -323,10 +351,10 @@ public class MainActivity extends AppCompatActivity {
                 public void onResponse(String response) {
                     // should return the string number "200" which means success
                     Log.i("LOG_RESPONSE", response);
-                    if (response.equals("200") && finalResultMessage.equals("false")) {
+                    if (response.equals("200")) {
                         receiveRecordStartSignal();
                     }
-                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
+//                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
                 }
             }, new Response.ErrorListener() {
                 @Override

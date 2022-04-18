@@ -84,6 +84,13 @@ public class Cryptography {
 
         try
         {
+            // temp test: downloading decrypted browser audio data in the download folder
+//            File audiofile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"testingBrowser5.wav");
+//            FileOutputStream ostest = new FileOutputStream(audiofile);
+//            ostest.write(decoded);
+//            ostest.close();
+            // temp test: done
+
             FileOutputStream os = new FileOutputStream(fileName+"/browseraudio.wav");
             os.write(decoded);
             os.close();

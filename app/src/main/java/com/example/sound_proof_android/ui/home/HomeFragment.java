@@ -1,5 +1,6 @@
 package com.example.sound_proof_android.ui.home;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,9 +26,14 @@ import java.util.Calendar;
 
 public class HomeFragment extends Fragment {
 
+    public TextView currentActionText;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
+
         View v = inflater.inflate(R.layout.fragment_home, container, false);
+
+        currentActionText = v.findViewById(R.id.currentActionText);
 
         try {
             KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
@@ -41,6 +47,8 @@ public class HomeFragment extends Fragment {
                 System.out.println("*** account");
             } else {
                 // Look for start recording signal (HTTP POST LONG POLLING)
+                currentActionText.setText("Waiting for start record signal...");
+                currentActionText.setTextColor(Color.YELLOW);
                 ((MainActivity)getActivity()).receiveRecordStartSignal();
             }
         } catch (KeyStoreException e) {
@@ -55,5 +63,4 @@ public class HomeFragment extends Fragment {
 
         return v;
     }
-
 }
