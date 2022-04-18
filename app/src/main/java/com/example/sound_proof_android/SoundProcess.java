@@ -20,7 +20,7 @@ public class SoundProcess {
 
     int type [] = {0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1};
     int numberOfBytes[] = {4, 4, 4, 4, 4, 2, 2, 4, 4, 2, 2, 4, 4};
-    double simThreshold = 0.3;
+    double simThreshold = 0.13;
     AudioSignal mobileAudioObj;
     AudioSignal browserAudioObj;
     int lag;
@@ -50,7 +50,6 @@ public class SoundProcess {
         } else {
             order = 1;
         }
-
         mobileAudioWav.close();
         browserAudioWav.close();
     }
@@ -85,8 +84,11 @@ public class SoundProcess {
     // Used to compute the similarity score by determining the average
     // from the max cross-correlation across signals x[i] and y[i].
     public double similarityScore(double[][] x, double[][] y, int l){
-        if(l > 150) return 0.0; // reject the audio if there is a lag greater than 150ms
+//        if(l > 150) return 0.0; // reject the audio if there is a lag greater than 150ms
 
+        System.out.println("************ ENTERING SIMILARITY SCORE TESTING");
+        System.out.println(x.length);
+        System.out.println("************ ENTERING SIMILARITY SCORE TESTING");
         double runningSum = 0;
         for (int i = 0; i < x.length; i++) {
             double maxCrossCorr = maxCrossCorrelation(x[i], y[i], l);
@@ -98,7 +100,7 @@ public class SoundProcess {
 
     public float maxCrossCorrelation(double[] x, double[] y, int l) {
         float max = normalize(x,y,0);
-        for (int i = 1; i < 150; i++) {
+        for (int i = 1; i < 300; i++) {
             max = max(normalize(x,y,i), max);
         }
         return max;
@@ -117,8 +119,8 @@ public class SoundProcess {
     public double crossCorrelation(double[] x, double[] y, int l){
         double sumCorrelation = 0; // used to keep track of the sum amount for the correlation
         int smallerLength = min(x.length, y.length);
-        for (int i = l*44; i < smallerLength; i++) {
-            sumCorrelation += x[i] * y[i - l*44];
+        for (int i = l*48; i < smallerLength; i++) {
+            sumCorrelation += x[i] * y[i - l*48];
         }
         return sumCorrelation;
     }
@@ -138,17 +140,17 @@ public class SoundProcess {
             byte byteArray[] = new byte[numberOfBytes[i]];
             int r = fileInputstream.read(byteArray, 0, numberOfBytes[i]);
             byteBuffer = ByteArrayToNumber(byteArray, numberOfBytes[i], type[i]);
-            if (i == 0) {audioSignal.setChunkID(new String(byteArray));}
-            if (i == 1) {audioSignal.setChunkSize(byteBuffer.getInt());}
-            if (i == 2) {audioSignal.setFormat(new String(byteArray));}
-            if (i == 3) {audioSignal.setSubChunk1ID(new String(byteArray));}
-            if (i == 4) {audioSignal.setSubChunk1Size(byteBuffer.getInt());}
-            if (i == 5) {audioSignal.setAudioFomart(byteBuffer.getShort());}
-            if (i == 6) {audioSignal.setNumChannels(byteBuffer.getShort());}
-            if (i == 7) {audioSignal.setSampleRate(byteBuffer.getInt());}
-            if (i == 8) {audioSignal.setByteRate(byteBuffer.getInt());}
-            if (i == 9) {audioSignal.setBlockAlign(byteBuffer.getShort());}
-            if (i == 10) {audioSignal.setBitsPerSample(byteBuffer.getShort());}
+            if (i == 0) {audioSignal.setChunkID(new String(byteArray));System.out.println("chunkID " + audioSignal.getChunkID()); }
+            if (i == 1) {audioSignal.setChunkSize(byteBuffer.getInt()); System.out.println("chunkSize " + audioSignal.getChunkSize());}
+            if (i == 2) {audioSignal.setFormat(new String(byteArray)); System.out.println("format " + audioSignal.getFormat());}
+            if (i == 3) {audioSignal.setSubChunk1ID(new String(byteArray)); System.out.println("subChunk1ID " + audioSignal.getSubChunk1ID());}
+            if (i == 4) {audioSignal.setSubChunk1Size(byteBuffer.getInt()); System.out.println("subChunk1Size " + audioSignal.subChunk1Size);}
+            if (i == 5) {audioSignal.setAudioFomart(byteBuffer.getShort()); System.out.println("audioFomart " + audioSignal.getAudioFomart());}
+            if (i == 6) {audioSignal.setNumChannels(byteBuffer.getShort()); System.out.println("numChannels " + audioSignal.numChannels);}
+            if (i == 7) {audioSignal.setSampleRate(byteBuffer.getInt()); System.out.println("sampleRate " + audioSignal.getSampleRate());}
+            if (i == 8) {audioSignal.setByteRate(byteBuffer.getInt()); System.out.println("byteRate " + audioSignal.byteRate);}
+            if (i == 9) {audioSignal.setBlockAlign(byteBuffer.getShort()); System.out.println("blockAlign " + audioSignal.getBlockAlign());}
+            if (i == 10) {audioSignal.setBitsPerSample(byteBuffer.getShort()); System.out.println("bitsPerSample " + audioSignal.getBitsPerSample());}
             if (i == 11) {
                 audioSignal.setSubChunk2ID(new String(byteArray));
                 if(audioSignal.getSubChunk2ID().compareTo("data") == 0) {

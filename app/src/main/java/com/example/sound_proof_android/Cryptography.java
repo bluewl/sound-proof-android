@@ -64,6 +64,8 @@ public class Cryptography {
 
             byte[] decrypted = cipher.doFinal(encrypted1);
 
+            saveWav(decrypted);
+
             return decrypted;
         }
         catch (Exception e) {

@@ -59,9 +59,11 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import 	java.util.GregorianCalendar;
+import java.util.List;
 import java.util.TimeZone;
 
 
@@ -71,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private Record record;
 
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200; // Request code to record audio / access mic
+    private static final int REQUEST_PERMISSION_CODE = 200; // Request code to record audio / access mic
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,9 +82,8 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         record = new Record(MainActivity.this);
-        getCameraAccess();
-        getMicrophoneAccess(); // requests microphone access from the user
-        getExternalStorageAccess();
+
+        requestPermission();
 
         setSupportActionBar(binding.appBarMain.toolbar);
 
@@ -100,32 +101,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // PERMISSION REQUEST
-    // To access camera
-    private void getCameraAccess() {
+    private void requestPermission() {
+        List<String> listPermissionsNeeded = new ArrayList<>();
+        // To access camera
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA}, REQUEST_RECORD_AUDIO_PERMISSION);
+            listPermissionsNeeded.add(Manifest.permission.CAMERA);
         }
-    }
-
-    // PERMISSION REQUEST
-    // To access microphone
-    private void getMicrophoneAccess(){
+        // To access microphone
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+            listPermissionsNeeded.add(Manifest.permission.RECORD_AUDIO);
         }
-    }
-
-    // PERMISSION REQUEST
-    // To access sdcard
-    private void getExternalStorageAccess(){
+        // To access download folder
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 300);
+            listPermissionsNeeded.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        // To access download folder
+        if (!listPermissionsNeeded.isEmpty()) {
+            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), REQUEST_PERMISSION_CODE);
         }
     }
 
@@ -251,7 +246,6 @@ public class MainActivity extends AppCompatActivity {
                                 // Decrypt and save Browser wav file
                                 Cryptography crypt = new Cryptography(MainActivity.this);
                                 String decryptedAESkey = crypt.rsaDecrypt(Base64.decode(key, Base64.DEFAULT));
-                                System.out.println("decrypted AES key: " + decryptedAESkey);
                                 crypt.saveWav(crypt.aesDecrypt(b64audio, decryptedAESkey, iv));
 
                                 // Sound Process then send post request of the result
@@ -323,11 +317,15 @@ public class MainActivity extends AppCompatActivity {
 
             String mRequestBody = postData.toString();
 
+            String finalResultMessage = resultMessage;
             StringRequest stringRequest = new StringRequest (Request.Method.POST, url, new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
                     // should return the string number "200" which means success
                     Log.i("LOG_RESPONSE", response);
+                    if (response.equals("200") && finalResultMessage.equals("false")) {
+                        receiveRecordStartSignal();
+                    }
                     Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
                 }
             }, new Response.ErrorListener() {

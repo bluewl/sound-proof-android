@@ -68,7 +68,6 @@ public class Record {
         Toast.makeText(context, "Recording Has Stopped.", Toast.LENGTH_LONG).show();
 
         calculateRecordStopTime();
-        playRecording();
     }
 
     // Plays back the recording for testing purposes

@@ -79,10 +79,10 @@ public class OneThirdOctaveBands {
      */
     public final double[] getStandardFrequencies(int samplingRate, double sampleDuration) {
         double[] standFrequencies = new double[0];
-        if (samplingRate == 44100 && sampleDuration == 1.) {
+        if (samplingRate == 48000 && sampleDuration == 1.) {
             standFrequencies = STANDARD_FREQUENCIES_REDUCED;
         }
-        else if (samplingRate == 44100 && sampleDuration == 5.) {
+        else if (samplingRate == 48000 && sampleDuration == 5.) {
             standFrequencies = STANDARD_FREQUENCIES_FULL;
         }
         return standFrequencies;
