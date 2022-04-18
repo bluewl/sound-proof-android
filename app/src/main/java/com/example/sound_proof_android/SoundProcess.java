@@ -21,7 +21,7 @@ public class SoundProcess {
 
     int type [] = {0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1};
     int numberOfBytes[] = {4, 4, 4, 4, 4, 2, 2, 4, 4, 2, 2, 4, 4};
-    double simThreshold = 0.13;
+    double simThreshold = 0.15;
     AudioSignal mobileAudioObj;
     AudioSignal browserAudioObj;
     int lag;
