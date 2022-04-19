@@ -89,7 +89,7 @@ public class SoundProcess {
     // Used to compute the similarity score by determining the average
     // from the max cross-correlation across signals x[i] and y[i].
     public double similarityScore(double[][] x, double[][] y, int l){
-        if(l > 700) return 0.0; // reject the audio if there is a lag greater than 300ms
+        if(l > 1000) return 0.0; // reject the audio if there is a lag greater than 300ms
 
         System.out.println("************ ENTERING SIMILARITY SCORE TESTING");
         System.out.println(x.length);
