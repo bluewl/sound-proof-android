@@ -45,6 +45,8 @@ public class HomeFragment extends Fragment {
                 System.out.println("*** with");
                 System.out.println("*** an");
                 System.out.println("*** account");
+                currentActionText.setText("Please connect with an account");
+                currentActionText.setTextColor(Color.RED);
             } else {
                 // Look for start recording signal (HTTP POST LONG POLLING)
                 currentActionText.setText("Waiting for start record signal...");

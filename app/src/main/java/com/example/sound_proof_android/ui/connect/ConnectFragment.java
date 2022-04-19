@@ -101,20 +101,6 @@ public class ConnectFragment extends Fragment {
         }
         connectViewModel = new ViewModelProvider(requireActivity()).get(ConnectViewModel.class);
 
-        try {
-            getPublicKey();
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (UnrecoverableKeyException e) {
-            e.printStackTrace();
-        }
-
 //        // TEST CODE TO CHECK IF BROWSER ENCRYPT WORKED BY DECRYPTING THE ENCRYPTED MESSAGE
 //        String text = "YnDAnYk8yKfD7PN6yKV0zGgGrk1h291E74Gei0tFsfPYe3B08h7i2zS6HqBhQo1EjTbDWIOGdh6ESIZ2j6PCLxgqSujR+5ai43W4SQfdF8ygDCF5F+wQPHNQhLw0m9pDr4epZu17SujUbRsOHxVJK6BTQnyVJR4bhlex4gJ2RZbJrFVx7U7Ch+k34yEcoWlNc4HP8qgmteq/Cwd80qV6tVqRU6MeNv0WVKmLtuk9bbV2xmIZmQ99naLcZxoe3t6tDcMufH2vpuWNp8cFMpMBn6v2JBgmHP05hdcLdSz/DzrvnH/beLRPVRV/OuzMg+iTTIJue1Hje4DEo8xgEb50yA==";
 //        byte[] decryptBytes = Base64.decode(text, Base64.DEFAULT);
