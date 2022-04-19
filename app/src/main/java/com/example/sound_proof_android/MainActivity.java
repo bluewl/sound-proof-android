@@ -71,6 +71,7 @@ import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
 
+    private boolean requestAlreadyMade;
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityMainBinding binding;
     private Record record;
@@ -81,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        requestAlreadyMade = false;
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -158,6 +161,8 @@ public class MainActivity extends AppCompatActivity {
                         currentActionText.setText("Waiting for start record signal...");
                         currentActionText.setTextColor(Color.YELLOW);
 
+                        requestAlreadyMade = false;
+
                         // Request again
                         receiveRecordStartSignal();
 
@@ -172,8 +177,8 @@ public class MainActivity extends AppCompatActivity {
                         // start recording
                         record.startRecording();
 
-                        // Request for browser recording
                         receiveBrowserAudio();
+
                     }
 //                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
                 }
@@ -212,8 +217,12 @@ public class MainActivity extends AppCompatActivity {
                     DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                     DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
-            // Access the RequestQueue through your singleton class.
-            queue.add(stringRequest);
+            if (!requestAlreadyMade) {
+                // this prevents from making multiple same request that crashes the app
+                requestAlreadyMade = true;
+                // Access the RequestQueue through your singleton class.
+                queue.add(stringRequest);
+            }
         } catch (KeyStoreException e) {
             e.printStackTrace();
         } catch (CertificateException e) {
@@ -352,6 +361,7 @@ public class MainActivity extends AppCompatActivity {
                     // should return the string number "200" which means success
                     Log.i("LOG_RESPONSE", response);
                     if (response.equals("200")) {
+                        requestAlreadyMade = false;
                         receiveRecordStartSignal();
                     }
 //                    Toast.makeText(MainActivity.this, "Response: " + response.toString(), Toast.LENGTH_LONG).show();
