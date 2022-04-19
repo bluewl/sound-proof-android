@@ -33,7 +33,14 @@ public class SoundProcess {
     public SoundProcess(Context context, long mobileStopTime, long browserStopTime) throws IOException {
         this.context = context;
 
-        lag = (int) Math.abs((int) Math.abs(mobileStopTime-browserStopTime) - 3000);
+        Record record = new Record(context);
+        String fileName = record.getSoundRecordingPath();
+        InputStream mobileAudioWav = new FileInputStream(fileName+"/soundproof.wav");
+        InputStream browserAudioWav = new FileInputStream(fileName+"/browseraudio.wav");
+        mobileAudioObj = readWav(mobileAudioWav);
+        browserAudioObj = readWav(browserAudioWav);
+
+        lag = (int) Math.abs(((mobileStopTime - 3000) - browserStopTime));
 
         // TEST
         System.out.println("mobile: " + mobileStopTime);
@@ -41,13 +48,7 @@ public class SoundProcess {
         System.out.println("lag: " + lag);
         //
 
-        Record record = new Record(context);
-        String fileName = record.getSoundRecordingPath();
-        InputStream mobileAudioWav = new FileInputStream(fileName+"/soundproof.wav");
-        InputStream browserAudioWav = new FileInputStream(fileName+"/browseraudio.wav");
-        mobileAudioObj = readWav(mobileAudioWav);
-        browserAudioObj = readWav(browserAudioWav);
-        if (mobileStopTime > browserStopTime) {
+        if ((mobileStopTime - 3000) < browserStopTime) {
             order = 0;
         } else {
             order = 1;
@@ -105,7 +106,7 @@ public class SoundProcess {
     public float maxCrossCorrelation(double[] x, double[] y, int l) {
         float max = normalize(x,y,0);
         int init = l - 200;
-        if (init < 0) { init = 0; }
+        if (init < 0) { init = 1; }
         for (int i = init; i < l+200; i++) {
             max = max(normalize(x,y,i), max);
         }
