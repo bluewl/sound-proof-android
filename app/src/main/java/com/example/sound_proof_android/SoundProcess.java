@@ -80,7 +80,11 @@ public class SoundProcess {
             System.out.println("Login Accepted - Similarity score passed.");
             return true;
         } else {
-            Toast.makeText(context, "Lag: " + lag + "\nSimilarity Score: " + simScore, Toast.LENGTH_LONG).show();
+            if (lag > 1000) {
+                Toast.makeText(context, "Lag: " + lag + "\nLag is too high to compare", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(context, "Lag: " + lag + "\nSimilarity Score: " + simScore, Toast.LENGTH_LONG).show();
+            }
             System.out.println("Login Rejected - Similarity score failed.");
             return false;
         }

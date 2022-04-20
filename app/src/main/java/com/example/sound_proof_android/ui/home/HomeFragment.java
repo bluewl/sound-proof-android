@@ -34,24 +34,20 @@ public class HomeFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_home, container, false);
 
         currentActionText = v.findViewById(R.id.currentActionText);
-
         try {
             KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
             if (!keyStore.containsAlias("spKey")) {
-                // display "pls connect with an account" or something like that
-                System.out.println("*** pls");
-                System.out.println("*** connect");
-                System.out.println("*** with");
-                System.out.println("*** an");
-                System.out.println("*** account");
                 currentActionText.setText("Please connect with an account");
                 currentActionText.setTextColor(Color.RED);
             } else {
+                ((MainActivity)getActivity()).setCurrentActionText(currentActionText);
                 // Look for start recording signal (HTTP POST LONG POLLING)
                 currentActionText.setText("Waiting for start record signal...");
                 currentActionText.setTextColor(Color.YELLOW);
-                ((MainActivity)getActivity()).receiveRecordStartSignal();
+                if (!((MainActivity) getActivity()).getInProcessStatus()) {
+                    ((MainActivity)getActivity()).receiveRecordStartSignal();
+                }
             }
         } catch (KeyStoreException e) {
             e.printStackTrace();

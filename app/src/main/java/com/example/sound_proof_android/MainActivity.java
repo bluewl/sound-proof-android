@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private Record record;
     private TextView currentActionText;
+    private boolean inProcess = false;
 
     private static final int REQUEST_PERMISSION_CODE = 200; // Request code to record audio / access mic
 
@@ -102,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
-        currentActionText = (TextView) findViewById(R.id.currentActionText);
+        currentActionText = findViewById(R.id.currentActionText);
     }
 
     // PERMISSION REQUEST
@@ -133,7 +134,10 @@ public class MainActivity extends AppCompatActivity {
     // Receives start recording signal from the server: This is when the phone should start recording
     public void receiveRecordStartSignal() {
 
+        inProcess = true;
+
         System.out.println("*** trying to receive record start signal ***");
+
         // GET REQUEST TO RECEIVE SIGNAL TO RECORD (make this a function later)
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://soundproof.azurewebsites.net/login/2farecordpolling";
@@ -398,6 +402,14 @@ public class MainActivity extends AppCompatActivity {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean getInProcessStatus() {
+        return inProcess;
+    }
+
+    public void setCurrentActionText(TextView text) {
+        this.currentActionText = text;
     }
 
     @Override
