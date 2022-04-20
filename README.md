@@ -3,6 +3,23 @@ The Sound-Proof concept is a new 2-factor authentication approach that focuses o
 
 Current prototype requires for the mobile application to be opened while authenticating so our next goal is to implement push notification to make the Sound Proof 2FA system to be completely hands-free.
 
+## Implementation
+**Cryptography** is implemented to encrypt and decrypt sensitive data.
+- Asymmetrical key generation by the mobile application.
+- RSA decryption and AES decryption implemented to decrypt encrypted data received from the server.
+
+**Sound Recording** is implemented when the mobile application receives a record signal from the server.
+- The mobile application records the ambient sound for 3 seconds in .wav format which is then used to compare with the browser’s recorded audio in later process.
+
+**Sound Synchronization** is implemented to reduce and calculate lag between the two separate recording from user's PC and mobile phone.
+- Makes a call to our server’s dedicated time server.
+- Receives browser’s recording start time, and compares it to the phone’s start time to calculate the lag and synchronize the sound clips.
+
+**Sound Processing** is implemented to compare different range of audible frequency to split and compare browser audio signals and mobile application audio signals to confirm co-location of two devices.
+- Reads in .wav files into a raw PCM data array and split it into 24 audible range of frequencies using one third octave band filters.
+- Sound comparison is done by cross-correlation for each bands which are normalized to calculate the maximum cross-correlation based on given lag value.
+- Similarity score between the two audio samples is calculated by averaging the maximum cross-correlation for each bands.
+
 ## One Time Connection
 Before the Sound Proof 2FA process, you will need to make a web account and connect (one time) your mobile application to that account.
 1. Register an account [here](https://soundproof.azurewebsites.net/login) and log in.
