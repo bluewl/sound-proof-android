@@ -1,3 +1,8 @@
+## Sound Proof 2FA
+The Sound-Proof concept is a new 2-factor authentication approach that focuses on convenience, usability and saving the user's time by not requiring any interaction with their phone. Instead, Sound-Proof relies on location proximity between the user’s computer and phone in order to verify their legitimacy by comparing the similarity of  the ambient sound recorded by both device’s microphones.
+
+Current prototype requires for the mobile application to be opened while authenticating so our next goal is to implement push notification to make the Sound Proof 2FA system to be completely hands-free.
+
 ## One Time Connection
 Before the Sound Proof 2FA process, you will need to make a web account and connect (one time) your mobile application to that account.
 1. Register an account [here](https://soundproof.azurewebsites.net/login) and log in.
@@ -18,3 +23,8 @@ After connecting your web account with your mobile application, we are now set t
 
 5. A result message will display on your home screen, either successful or failed. Regardless of what results you get, you can always try to log in to the website again right away and the authentication process will start immediately.
 ![auth_result](https://user-images.githubusercontent.com/32169490/164157722-10c7381b-65ab-41f3-8fbd-350e6d2c6d1f.png)
+
+## Important Links
+The idea of the Sound Proof is based off from [this paper](https://www.usenix.org/conference/usenixsecurity15/technical-sessions/presentation/karapanos).
+
+The repository for the web/server side of the Sound Proof system can be found [here](https://github.com/wilsonhammell/sound-proof-web).
