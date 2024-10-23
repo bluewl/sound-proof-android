@@ -236,6 +236,8 @@ public class MainActivity extends AppCompatActivity {
     // Downloads encrypted browser audio data
     public void receiveBrowserAudio() {
 
+        System.out.println("*** comparing sound ***");
+
         // current action message updated
         currentActionText.setText("Comparing Sound...");
         currentActionText.setTextColor(Color.CYAN);
@@ -244,15 +246,17 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://soundproof.azurewebsites.net/login/2farecordingdata";
 
+        System.out.println("*** 1");
         // get public key
         KeyStore keyStore = null;
         try {
+            System.out.println("*** 2");
             keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
             PublicKey publicKey = keyStore.getCertificate("spKey").getPublicKey();
             JSONObject postData = new JSONObject();
             postData.put("key", "-----BEGIN PUBLIC KEY-----" + android.util.Base64.encodeToString(publicKey.getEncoded(), android.util.Base64.DEFAULT).replaceAll("\n", "") + "-----END PUBLIC KEY-----");
-
+            System.out.println("*** 3");
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                     (Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
                         @Override
@@ -282,13 +286,13 @@ public class MainActivity extends AppCompatActivity {
                     }, new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-                            Log.e("LOG_RESPONSE", error.toString());
+                            Log.e("LOG_RESPONSE-", error.toString());
                         }
                     }) {
                 @Override
                 protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
                     if (response != null) {
-                        System.out.println(response.statusCode);
+                        System.out.println("*** " + response.toString());
                     }
                     return super.parseNetworkResponse(response);
                 }
@@ -336,6 +340,8 @@ public class MainActivity extends AppCompatActivity {
 
             resultMessage = "false";
         }
+
+        System.out.println("*** Result: " + resultMessage);
 
         KeyStore keyStore = null;
         try {
